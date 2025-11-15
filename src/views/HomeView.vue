@@ -1,47 +1,7 @@
 <template>
-  <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-background-light font-display text-text-primary">
-    <div class="flex h-full grow flex-col">
-      <!-- Header -->
-      <header class="w-full border-b border-gray-300 bg-background-light">
-        <div class="mx-auto flex max-w-7xl items-center justify-between gap-8 whitespace-nowrap px-4 py-4 sm:px-6 lg:px-8">
-          <div class="flex items-center gap-4">
-            <RouterLink to="/">
-              <h2 class="text-text-primary text-2xl font-bold leading-tight tracking-[-0.015em]">CH Fashion</h2>
-            </RouterLink>
-          </div>
-          <div class="hidden items-center gap-6 md:flex">
-            <RouterLink to="/" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">Home</RouterLink>
-            <a href="#contact" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">Contact</a>
-            <a href="#about" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">About</a>
-            <RouterLink v-if="!authStore.isAuthenticated" to="/signup" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">Sign Up</RouterLink>
-            <RouterLink v-else to="/dashboard" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">Dashboard</RouterLink>
-          </div>
-          <div class="flex items-center gap-4">
-            <div class="relative hidden lg:block">
-              <input
-                v-model="searchQuery"
-                class="w-64 rounded bg-secondary-background py-2 pl-4 pr-10 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                placeholder="What are you looking for?"
-                type="text"
-                @keyup.enter="handleSearch"
-              />
-              <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-xl text-gray-500">search</span>
-            </div>
-            <button class="relative flex h-8 w-8 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-transparent text-text-primary transition-colors hover:text-primary">
-              <span class="material-symbols-outlined text-2xl">favorite</span>
-            </button>
-            <button class="relative flex h-8 w-8 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-transparent text-text-primary transition-colors hover:text-primary">
-              <span class="material-symbols-outlined text-2xl">shopping_cart</span>
-              <span v-if="cartCount > 0" class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">{{ cartCount }}</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <!-- Main Content -->
-      <main class="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-8 sm:px-6 lg:px-8">
-        <!-- Hero Banner Section -->
-        <div class="grid grid-cols-1 gap-px md:grid-cols-4">
+  <div>
+    <!-- Hero Banner Section -->
+    <div class="grid grid-cols-1 gap-px md:grid-cols-4">
           <div class="hidden border-r border-gray-300 pr-4 md:block">
             <ul class="flex flex-col gap-4 pt-8">
               <li v-for="category in categories" :key="category.id">
@@ -324,101 +284,14 @@
             </div>
           </div>
         </section>
-      </main>
-
-      <!-- Footer -->
-      <footer class="w-full bg-black text-white">
-        <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          <div class="grid grid-cols-2 gap-8 md:grid-cols-5">
-            <div>
-              <h3 class="mb-4 text-xl font-bold">EcoWear</h3>
-              <p class="mb-4 text-lg">Subscribe</p>
-              <p class="mb-4 text-sm">Get 10% off your first order</p>
-              <div class="relative">
-                <input
-                  v-model="subscribeEmail"
-                  class="w-full rounded border border-white bg-transparent py-2 pl-3 pr-10 text-sm"
-                  placeholder="Enter your email"
-                  type="email"
-                  @keyup.enter="handleSubscribe"
-                />
-                <button class="absolute right-2 top-1/2 -translate-y-1/2" @click="handleSubscribe">
-                  <span class="material-symbols-outlined">send</span>
-                </button>
-              </div>
-            </div>
-            <div>
-              <h3 class="mb-4 text-lg font-medium">Support</h3>
-              <ul class="space-y-3 text-sm">
-                <li>111 Bijoy sarani, Dhaka, DH 1515, Bangladesh.</li>
-                <li>ecowear@gmail.com</li>
-                <li>+88015-88888-9999</li>
-              </ul>
-            </div>
-            <div>
-              <h3 class="mb-4 text-lg font-medium">Account</h3>
-              <ul class="space-y-3 text-sm">
-                <li><RouterLink to="/dashboard" class="hover:underline">My Account</RouterLink></li>
-                <li v-if="!authStore.isAuthenticated"><RouterLink to="/login" class="hover:underline">Login / Register</RouterLink></li>
-                <li v-else><RouterLink to="/dashboard" class="hover:underline">Dashboard</RouterLink></li>
-                <li><a href="#" class="hover:underline">Cart</a></li>
-                <li><a href="#" class="hover:underline">Wishlist</a></li>
-                <li><a href="#" class="hover:underline">Shop</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 class="mb-4 text-lg font-medium">Quick Link</h3>
-              <ul class="space-y-3 text-sm">
-                <li><a href="#" class="hover:underline">Privacy Policy</a></li>
-                <li><a href="#" class="hover:underline">Terms Of Use</a></li>
-                <li><a href="#" class="hover:underline">FAQ</a></li>
-                <li><a href="#" class="hover:underline">Contact</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 class="mb-4 text-lg font-medium">Download App</h3>
-              <p class="mb-2 text-xs text-gray-400">Save $3 with App New User Only</p>
-              <div class="mb-4 flex gap-4">
-                <div class="h-20 w-20 bg-gray-700"></div>
-                <div class="flex flex-col justify-center gap-2">
-                  <div class="h-8 w-28 bg-gray-700"></div>
-                  <div class="h-8 w-28 bg-gray-700"></div>
-                </div>
-              </div>
-              <div class="flex gap-6">
-                <a href="#"><svg aria-hidden="true" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path clip-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" fill-rule="evenodd"></path></svg></a>
-                <a href="#"><svg aria-hidden="true" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.71v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"></path></svg></a>
-                <a href="#"><svg aria-hidden="true" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.032a9.968 9.968 0 00-3.284.64C5.468 4.232 4.232 5.468 2.672 8.716c-.64 1.32-.96 2.76-.96 4.32 0 1.56.32 3 .96 4.32 1.56 3.248 2.796 4.484 6.044 6.044 1.32.64 2.76.96 4.32.96 1.56 0 3-.32 4.32-.96 3.248-1.56 4.484-2.796 6.044-6.044.64-1.32.96-2.76.96-4.32 0-1.56-.32-3-.96-4.32C19.768 5.468 18.532 4.232 15.284 2.672A9.968 9.968 0 0012 2.032zM12 14.4a2.4 2.4 0 110-4.8 2.4 2.4 0 010 4.8zm3.84-6.48a1.2 1.2 0 110-2.4 1.2 1.2 0 010 2.4z"></path><path d="M12 16.8a4.8 4.8 0 100-9.6 4.8 4.8 0 000 9.6z"></path><path d="M19.2 7.2a1.2 1.2 0 100 2.4 1.2 1.2 0 000-2.4z"></path></svg></a>
-              </div>
-            </div>
-          </div>
-          <div class="mt-8 border-t border-gray-700 pt-4 text-center text-gray-500">
-            <p>© Copyright Rimel 2022. All right reserved</p>
-          </div>
-        </div>
-      </footer>
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { RouterLink } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
-import { useNavigation } from '@/composables/useNavigation';
 
-const authStore = useAuthStore();
-const { navigateToSearch } = useNavigation();
-
-// Search
-const searchQuery = ref('');
 const flashSalesContainer = ref<HTMLElement | null>(null);
-
-// Cart
-const cartCount = ref(2);
-
-// Subscribe
-const subscribeEmail = ref('');
 
 // Countdown timer
 const countdown = ref({
@@ -576,16 +449,6 @@ const newArrivalProducts = ref([
 // Methods
 const formatTime = (value: number): string => {
   return value.toString().padStart(2, '0');
-};
-
-const handleSearch = () => {
-  navigateToSearch(searchQuery.value);
-};
-
-const handleSubscribe = () => {
-  if (subscribeEmail.value.trim()) {
-    subscribeEmail.value = '';
-  }
 };
 
 const scrollFlashSales = (direction: 'left' | 'right') => {

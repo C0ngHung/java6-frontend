@@ -1,49 +1,5 @@
 <template>
-  <div class="bg-background-light dark:bg-background-dark text-black dark:text-white min-h-screen">
-    <!-- Top Banner -->
-    <div class="bg-background-dark text-white text-xs sm:text-sm py-2 sm:py-3">
-      <div class="container mx-auto px-4 flex justify-center items-center">
-        <p class="text-center flex-grow text-xs sm:text-sm">
-          <span class="hidden sm:inline">Summer Sale For All Swim Suits And Free Express Delivery - OFF 50%!</span>
-          <span class="sm:hidden">Summer Sale - OFF 50%!</span>
-          <RouterLink to="/products" class="font-semibold underline ml-1 sm:ml-2">ShopNow</RouterLink>
-        </p>
-        <div class="hidden sm:flex items-center ml-4">
-          <span>English</span>
-          <span class="material-symbols-outlined text-base ml-1">expand_more</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Header -->
-    <header class="border-b border-gray-300 dark:border-gray-700 sticky top-0 bg-background-light dark:bg-background-dark z-50">
-      <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-        <div class="flex justify-between items-center gap-4">
-          <RouterLink to="/" class="text-xl sm:text-2xl font-bold font-display text-black dark:text-white flex-shrink-0">Exclusive</RouterLink>
-          
-          <!-- Desktop Navigation -->
-          <nav class="hidden lg:flex items-center space-x-8 xl:space-x-12">
-            <RouterLink to="/" class="text-black dark:text-white hover:underline text-sm xl:text-base">Home</RouterLink>
-            <a href="#contact" class="text-black dark:text-white hover:underline text-sm xl:text-base">Contact</a>
-            <a href="#about" class="text-black dark:text-white hover:underline text-sm xl:text-base">About</a>
-            <RouterLink to="/login" class="text-black dark:text-white hover:underline text-sm xl:text-base">Sign In</RouterLink>
-          </nav>
-
-          <!-- Right Side Actions -->
-          <div class="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
-            <RouterLink to="/wishlist" class="text-black dark:text-white p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-DEFAULT transition-colors">
-              <span class="material-symbols-outlined text-xl sm:text-2xl">favorite</span>
-            </RouterLink>
-            <RouterLink to="/cart" class="text-black dark:text-white p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-DEFAULT transition-colors">
-              <span class="material-symbols-outlined text-xl sm:text-2xl">shopping_cart</span>
-            </RouterLink>
-          </div>
-        </div>
-      </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16 xl:py-24">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16 xl:py-24">
       <div class="flex items-center justify-center min-h-[60vh]">
         <div class="w-full max-w-md">
           <!-- Card -->
@@ -160,7 +116,6 @@
           </div>
         </div>
       </div>
-    </main>
   </div>
 </template>
 

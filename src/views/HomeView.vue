@@ -13,7 +13,7 @@
             <RouterLink to="/" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">Home</RouterLink>
             <a href="#contact" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">Contact</a>
             <a href="#about" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">About</a>
-            <RouterLink v-if="!authStore.isAuthenticated" to="/register" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">Sign Up</RouterLink>
+            <RouterLink v-if="!authStore.isAuthenticated" to="/signup" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">Sign Up</RouterLink>
             <RouterLink v-else to="/dashboard" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">Dashboard</RouterLink>
           </div>
           <div class="flex items-center gap-4">
@@ -405,8 +405,10 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { useNavigation } from '@/composables/useNavigation';
 
 const authStore = useAuthStore();
+const { navigateToSearch } = useNavigation();
 
 // Search
 const searchQuery = ref('');
@@ -577,17 +579,12 @@ const formatTime = (value: number): string => {
 };
 
 const handleSearch = () => {
-  if (searchQuery.value.trim()) {
-    console.log('Searching for:', searchQuery.value);
-    // TODO: Implement search functionality
-  }
+  navigateToSearch(searchQuery.value);
 };
 
 const handleSubscribe = () => {
   if (subscribeEmail.value.trim()) {
-    console.log('Subscribing:', subscribeEmail.value);
     subscribeEmail.value = '';
-    // TODO: Implement subscribe functionality
   }
 };
 
@@ -602,9 +599,7 @@ const scrollFlashSales = (direction: 'left' | 'right') => {
 };
 
 const scrollCategories = (direction: 'left' | 'right') => {
-  // Categories are in a grid, so scrolling might not be needed
-  // But we can implement if needed
-  console.log('Scroll categories:', direction);
+  // Categories are displayed in a grid, scrolling not needed
 };
 
 const updateCountdown = () => {

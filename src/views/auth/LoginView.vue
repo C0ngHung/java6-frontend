@@ -1,47 +1,54 @@
 <template>
   <div class="flex flex-col min-h-screen bg-background-light dark:bg-background-dark text-black dark:text-white font-sans">
     <!-- Top Banner -->
-    <div class="bg-black text-white">
-      <div class="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-center sm:justify-between items-center py-3 text-sm">
-        <p class="text-center w-full sm:w-auto">
-          Summer Sale For All Swim Suits And Free Express Delivery - OFF 50%!
-          <RouterLink to="/products" class="font-bold underline ml-2">ShopNow</RouterLink>
+    <div class="bg-background-dark text-white text-xs sm:text-sm py-2 sm:py-3">
+      <div class="container mx-auto px-4 flex justify-center items-center">
+        <p class="text-center flex-grow text-xs sm:text-sm">
+          <span class="hidden sm:inline">Summer Sale For All Swim Suits And Free Express Delivery - OFF 50%!</span>
+          <span class="sm:hidden">Summer Sale - OFF 50%!</span>
+          <RouterLink to="/products" class="font-semibold underline ml-1 sm:ml-2">ShopNow</RouterLink>
         </p>
-        <div class="hidden sm:flex items-center space-x-1">
+        <div class="hidden sm:flex items-center ml-4">
           <span>English</span>
-          <span class="material-icons-outlined !text-base">expand_more</span>
+          <span class="material-symbols-outlined text-base ml-1">expand_more</span>
         </div>
       </div>
     </div>
 
     <!-- Header -->
-    <header class="border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-background-light dark:bg-background-dark z-10">
-      <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-20">
-          <RouterLink to="/" class="text-2xl font-bold font-display">CH Fashion</RouterLink>
-          <nav class="hidden lg:flex items-center space-x-8 text-base">
-            <RouterLink to="/" class="hover:underline">Home</RouterLink>
-            <a href="#contact" class="hover:underline">Contact</a>
-            <a href="#about" class="hover:underline">About</a>
-            <RouterLink v-if="!authStore.isAuthenticated" to="/register" class="hover:underline">Sign Up</RouterLink>
-            <RouterLink v-else to="/dashboard" class="hover:underline">Dashboard</RouterLink>
+    <header class="border-b border-gray-300 dark:border-gray-700 sticky top-0 bg-background-light dark:bg-background-dark z-50">
+      <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+        <div class="flex justify-between items-center gap-4">
+          <RouterLink to="/" class="text-xl sm:text-2xl font-bold font-display text-black dark:text-white flex-shrink-0">Exclusive</RouterLink>
+          
+          <!-- Desktop Navigation -->
+          <nav class="hidden lg:flex items-center space-x-8 xl:space-x-12">
+            <RouterLink to="/" class="text-black dark:text-white hover:underline text-sm xl:text-base">Home</RouterLink>
+            <a href="#contact" class="text-black dark:text-white hover:underline text-sm xl:text-base">Contact</a>
+            <a href="#about" class="text-black dark:text-white hover:underline text-sm xl:text-base">About</a>
+            <RouterLink v-if="!authStore.isAuthenticated" to="/register" class="text-black dark:text-white hover:underline text-sm xl:text-base">Sign Up</RouterLink>
+            <RouterLink v-else to="/dashboard" class="text-black dark:text-white hover:underline text-sm xl:text-base">Dashboard</RouterLink>
           </nav>
-          <div class="flex items-center space-x-4">
+
+          <!-- Right Side Actions -->
+          <div class="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+            <!-- Search Bar -->
             <div class="relative hidden sm:block">
               <input
                 v-model="searchQuery"
-                class="bg-gray-100 dark:bg-gray-800 border-none rounded-DEFAULT pl-4 pr-10 py-2 w-60 focus:ring-primary focus:border-primary"
+                class="bg-gray-100 dark:bg-gray-800 border-none rounded-DEFAULT py-2 px-4 w-40 sm:w-48 lg:w-64 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-primary"
                 placeholder="What are you looking for?"
                 type="text"
                 @keyup.enter="handleSearch"
               />
-              <span class="material-icons-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">search</span>
+              <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 text-lg">search</span>
             </div>
-            <RouterLink to="/wishlist" class="relative">
-              <span class="material-icons-outlined">favorite_border</span>
+
+            <RouterLink to="/wishlist" class="text-black dark:text-white p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-DEFAULT transition-colors">
+              <span class="material-symbols-outlined text-xl sm:text-2xl">favorite</span>
             </RouterLink>
-            <RouterLink to="/cart" class="relative">
-              <span class="material-icons-outlined">shopping_cart</span>
+            <RouterLink to="/cart" class="text-black dark:text-white p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-DEFAULT transition-colors">
+              <span class="material-symbols-outlined text-xl sm:text-2xl">shopping_cart</span>
             </RouterLink>
           </div>
         </div>
@@ -49,23 +56,22 @@
     </header>
 
     <!-- Main Content -->
-    <main class="flex-grow flex items-center justify-center py-12 lg:py-24">
-      <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-1 lg:grid-cols-2 items-center gap-16">
-          <!-- Image Section (Hidden on mobile) -->
-          <div class="hidden lg:flex justify-center items-center p-4">
-            <img
-              alt="Smartphone with a shopping cart and pink shopping bags"
-              class="max-w-full h-auto object-contain"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCgKPIpBwwa3GUeyAFAco1XAZ6XZ2PywJ5uygEmOmwwYh90yxat8E4UYGOxAvwZhAUG400UFPN_2Eq0odhPSZw-8waSwv2MI1cd6ecpTcHxvnge4NH515h6YGw42v11mdGCvgMaEkD7dDAvoZly4qNK58NJttsoG7EMgN9V1ZarwqLOj9g_ZnmhvekvjcOSgXPwYgr1v0JUXpWoXCpJkqJQ1zT-CNiDiG8K0TEvWWHcHd8_2WadwmaqdzWJrUXsm6okBesQG0q8w0"
-            />
-          </div>
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16 xl:py-24">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16 xl:gap-32 items-center">
+        <!-- Image Section (Hidden on mobile) -->
+        <div class="hidden lg:flex justify-center items-center p-4 lg:p-8">
+          <img
+            alt="Smartphone with a shopping cart and pink shopping bags"
+            class="max-w-full h-auto object-contain max-h-[600px]"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCgKPIpBwwa3GUeyAFAco1XAZ6XZ2PywJ5uygEmOmwwYh90yxat8E4UYGOxAvwZhAUG400UFPN_2Eq0odhPSZw-8waSwv2MI1cd6ecpTcHxvnge4NH515h6YGw42v11mdGCvgMaEkD7dDAvoZly4qNK58NJttsoG7EMgN9V1ZarwqLOj9g_ZnmhvekvjcOSgXPwYgr1v0JUXpWoXCpJkqJQ1zT-CNiDiG8K0TEvWWHcHd8_2WadwmaqdzWJrUXsm6okBesQG0q8w0"
+          />
+        </div>
 
           <!-- Login Form Section -->
-          <div class="flex flex-col justify-center w-full max-w-md mx-auto">
-            <div class="text-left space-y-4 mb-10">
-              <h1 class="text-3xl font-display font-medium tracking-wide">Log in to CH Fashion</h1>
-              <p class="text-gray-700 dark:text-gray-300">Enter your details below</p>
+          <div class="flex flex-col justify-center w-full max-w-md mx-auto lg:mx-0">
+            <div class="text-left space-y-4 mb-8 sm:mb-10">
+              <h1 class="text-2xl sm:text-3xl font-display font-medium tracking-wide">Đăng nhập</h1>
+              <p class="text-sm sm:text-base text-gray-700 dark:text-gray-300">Nhập thông tin đăng nhập của bạn</p>
             </div>
 
             <!-- Error Message -->
@@ -78,23 +84,24 @@
               <p class="text-sm font-medium text-green-800 dark:text-green-200">{{ success }}</p>
             </div>
 
-            <form @submit.prevent="handleLogin" class="space-y-10">
-              <div class="space-y-8">
-                <!-- Email/Username Input -->
+            <form @submit.prevent="handleLogin" class="space-y-6 sm:space-y-8">
+              <div class="space-y-6 sm:space-y-8">
+                <!-- Username Input -->
                 <div class="relative">
                   <input
-                    id="email"
+                    id="username"
                     v-model="form.username"
                     class="w-full border-0 border-b-2 border-gray-300 dark:border-gray-600 bg-transparent py-2 focus:outline-none focus:ring-0 focus:border-black dark:focus:border-white transition-colors peer"
                     placeholder=" "
                     type="text"
                     required
+                    autocomplete="username"
                   />
                   <label
                     class="absolute left-0 -top-3.5 text-gray-500 dark:text-gray-400 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-sm peer-focus:text-gray-500 dark:peer-focus:text-gray-400"
-                    for="email"
+                    for="username"
                   >
-                    Email or Phone Number
+                    Username
                   </label>
                 </div>
 
@@ -107,6 +114,7 @@
                     placeholder=" "
                     type="password"
                     required
+                    autocomplete="current-password"
                   />
                   <label
                     class="absolute left-0 -top-3.5 text-gray-500 dark:text-gray-400 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-sm peer-focus:text-gray-500 dark:peer-focus:text-gray-400"
@@ -117,23 +125,32 @@
                 </div>
               </div>
 
-              <div class="flex items-center justify-between gap-8">
+              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-8">
                 <button
                   type="submit"
                   :disabled="loading"
-                  class="w-1/2 bg-primary text-white font-medium py-3 px-6 rounded-DEFAULT hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="w-full sm:w-1/2 bg-primary text-white font-medium py-3 sm:py-4 px-6 rounded-DEFAULT hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                 >
-                  <span v-if="loading">Logging in...</span>
-                  <span v-else>Log In</span>
+                  <span v-if="loading">Đang đăng nhập...</span>
+                  <span v-else>Đăng nhập</span>
                 </button>
-                <RouterLink to="/forgot-password" class="text-primary hover:underline">
-                  Forgot Password?
+                <RouterLink to="/forgot-password" class="text-primary hover:underline text-sm sm:text-base w-full sm:w-auto text-center sm:text-left">
+                  Quên mật khẩu?
                 </RouterLink>
               </div>
             </form>
+
+            <!-- Sign Up Link -->
+            <div class="mt-6 sm:mt-8 text-center">
+              <p class="text-sm sm:text-base text-gray-600 dark:text-gray-300">
+                Chưa có tài khoản?
+                <RouterLink to="/register" class="font-medium text-primary hover:text-red-600 underline">
+                  Đăng ký ngay
+                </RouterLink>
+              </p>
+            </div>
           </div>
         </div>
-      </div>
     </main>
 
     <!-- Footer -->
@@ -283,10 +300,12 @@ import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { RouterLink } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { useNavigation } from '@/composables/useNavigation';
 
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
+const { navigateToSearch } = useNavigation();
 
 const form = ref({
   username: '',
@@ -301,10 +320,10 @@ const subscribeEmail = ref('');
 
 onMounted(() => {
   if (route.query.registered === 'true') {
-    success.value = 'Registration successful! Please sign in.';
+    success.value = 'Đăng ký thành công! Vui lòng đăng nhập.';
   }
   if (route.query.activated === 'true') {
-    success.value = 'Account activated successfully! Please sign in.';
+    success.value = 'Tài khoản đã được kích hoạt thành công! Vui lòng đăng nhập.';
   }
 });
 
@@ -318,23 +337,26 @@ const handleLogin = async () => {
     const redirect = route.query.redirect as string;
     router.push(redirect || '/dashboard');
   } catch (err: any) {
-    error.value = err.response?.data?.message || err.response?.data?.errors?.[0] || 'Login failed. Please try again.';
+    const errorMessage = err.response?.data?.message || err.response?.data?.errors?.[0] || 'Đăng nhập thất bại. Vui lòng thử lại.';
+    
+    // Handle specific error codes
+    if (err.response?.data?.errorCode === 'ACCOUNT_NOT_ACTIVATED') {
+      error.value = 'Tài khoản chưa được kích hoạt. Vui lòng kiểm tra email để kích hoạt tài khoản.';
+    } else {
+      error.value = errorMessage;
+    }
   } finally {
     loading.value = false;
   }
 };
 
 const handleSearch = () => {
-  if (searchQuery.value.trim()) {
-    router.push({ path: '/products', query: { search: searchQuery.value } });
-  }
+  navigateToSearch(searchQuery.value);
 };
 
 const handleSubscribe = () => {
   if (subscribeEmail.value.trim()) {
-    console.log('Subscribing:', subscribeEmail.value);
     subscribeEmail.value = '';
-    // TODO: Implement subscribe functionality
   }
 };
 </script>

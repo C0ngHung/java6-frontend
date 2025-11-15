@@ -18,7 +18,31 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/register',
     name: 'Register',
-    component: () => import('@/views/auth/RegisterView.vue'),
+    component: () => import('@/views/auth/SignUpView.vue'),
+    meta: { requiresAuth: false },
+  },
+  {
+    path: '/signup',
+    name: 'SignUp',
+    component: () => import('@/views/auth/SignUpView.vue'),
+    meta: { requiresAuth: false },
+  },
+  {
+    path: '/forgot-password',
+    name: 'ForgotPassword',
+    component: () => import('@/views/auth/ForgotPasswordView.vue'),
+    meta: { requiresAuth: false },
+  },
+  {
+    path: '/password-reset',
+    name: 'PasswordReset',
+    component: () => import('@/views/auth/PasswordResetView.vue'),
+    meta: { requiresAuth: false },
+  },
+  {
+    path: '/otp-verification',
+    name: 'OtpVerification',
+    component: () => import('@/views/auth/OtpVerificationView.vue'),
     meta: { requiresAuth: false },
   },
   {
@@ -26,6 +50,12 @@ const routes: RouteRecordRaw[] = [
     name: 'Dashboard',
     component: () => import('@/views/DashboardView.vue'),
     meta: { requiresAuth: true },
+  },
+  {
+    path: '/admin/dashboard',
+    name: 'AdminDashboard',
+    component: () => import('@/views/admin/AdminDashboardView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true },
   },
   {
     path: '/:pathMatch(.*)*',

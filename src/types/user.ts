@@ -5,6 +5,7 @@ export interface User {
   fullName: string;
   phone: string;
   isActive: boolean;
+  role?: string;
   authorities?: string[];
 }
 

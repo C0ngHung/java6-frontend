@@ -8,8 +8,8 @@ export default {
   theme: {
     extend: {
       colors: {
-        "background-light": "#FFFFFF",
-        "background-dark": "#121212",
+        "background-light": "#f8f6f6",
+        "background-dark": "#221010",
         "secondary-background": "#F5F5F5",
         "text-primary": "#000000",
         "text-secondary": "#7D8184",
@@ -28,7 +28,7 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#DB4444",
+          DEFAULT: "#ec1313",
           foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
@@ -57,7 +57,7 @@ export default {
         },
       },
       fontFamily: {
-        display: ["Poppins", "sans-serif"],
+        display: ["Plus Jakarta Sans", "Noto Sans", "sans-serif"],
         sans: ["Inter", "sans-serif"],
       },
       borderRadius: {

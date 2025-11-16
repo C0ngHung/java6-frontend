@@ -60,6 +60,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, requiresAdmin: true, layout: 'default' },
   },
   {
+    path: '/logout',
+    name: 'Logout',
+    component: () => import('@/views/LogoutView.vue'),
+    meta: { requiresAuth: false, layout: 'default' },
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/NotFoundView.vue'),

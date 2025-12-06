@@ -12,6 +12,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  optimizeDeps: {
+    include: ['reka-ui'],
+  },
   server: {
     port: 5173,
     open: true, // Automatically open browser when dev server starts

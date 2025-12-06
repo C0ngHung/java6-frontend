@@ -70,25 +70,30 @@
               </div>
             </div>
             <div class="hidden items-center gap-2 sm:flex">
-              <button
-                class="flex h-10 w-10 items-center justify-center rounded-full bg-secondary-background hover:bg-gray-200"
+              <Button
+                variant="outline"
+                size="icon"
+                class="rounded-full"
                 @click="scrollFlashSales('left')"
               >
                 <span class="material-symbols-outlined">arrow_back</span>
-              </button>
-              <button
-                class="flex h-10 w-10 items-center justify-center rounded-full bg-secondary-background hover:bg-gray-200"
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                class="rounded-full"
                 @click="scrollFlashSales('right')"
               >
                 <span class="material-symbols-outlined">arrow_forward</span>
-              </button>
+              </Button>
             </div>
           </div>
           <div ref="flashSalesContainer" class="flex gap-6 overflow-x-auto pb-4 [-ms-overflow-style:none] [scrollbar-width:none]">
             <div
               v-for="product in flashSaleProducts"
               :key="product.id"
-              class="group w-64 flex-shrink-0"
+              class="group w-64 flex-shrink-0 cursor-pointer"
+              @click="handleProductClick(product)"
             >
               <div class="relative w-full overflow-hidden rounded bg-secondary-background">
                 <div
@@ -99,19 +104,22 @@
                   -{{ product.discount }}%
                 </div>
                 <div class="absolute top-3 right-3 flex flex-col gap-2">
-                  <button class="flex h-8 w-8 items-center justify-center rounded-full bg-white text-text-primary hover:text-primary">
+                  <Button variant="ghost" size="icon" class="h-8 w-8 rounded-full bg-white text-text-primary hover:text-primary" @click.stop>
                     <span class="material-symbols-outlined text-xl">favorite</span>
-                  </button>
-                  <button class="flex h-8 w-8 items-center justify-center rounded-full bg-white text-text-primary hover:text-primary">
+                  </Button>
+                  <Button variant="ghost" size="icon" class="h-8 w-8 rounded-full bg-white text-text-primary hover:text-primary" @click.stop="handleProductClick(product)">
                     <span class="material-symbols-outlined text-xl">visibility</span>
-                  </button>
+                  </Button>
                 </div>
-                <button class="absolute bottom-0 w-full translate-y-full bg-black py-2 text-white transition-transform duration-300 group-hover:translate-y-0">
+                <Button 
+                  class="absolute bottom-0 w-full translate-y-full bg-black py-2 text-white transition-transform duration-300 group-hover:translate-y-0"
+                  @click.stop="handleAddToCart(product.id)"
+                >
                   Add To Cart
-                </button>
+                </Button>
               </div>
               <div class="mt-4">
-                <p class="font-medium">{{ product.name }}</p>
+                <p class="font-medium hover:text-primary transition-colors">{{ product.name }}</p>
                 <div class="flex items-center gap-2">
                   <p class="text-primary">${{ product.price }}</p>
                   <p class="text-sm text-gray-500 line-through">${{ product.originalPrice }}</p>
@@ -120,9 +128,14 @@
             </div>
           </div>
           <div class="mt-8 text-center">
-            <button class="rounded bg-primary px-12 py-4 font-medium text-white transition-colors hover:bg-red-700">
-              View All Products
-            </button>
+            <Button as-child>
+              <RouterLink 
+                to="/products" 
+                class="inline-block rounded bg-primary px-12 py-4 font-medium text-white transition-colors hover:bg-red-700"
+              >
+                View All Products
+              </RouterLink>
+            </Button>
           </div>
         </section>
 
@@ -197,16 +210,19 @@
                   :style="{ backgroundImage: `url('${product.image}')` }"
                 ></div>
                 <div class="absolute top-3 right-3 flex flex-col gap-2">
-                  <button class="flex h-8 w-8 items-center justify-center rounded-full bg-white text-text-primary hover:text-primary">
+                  <Button variant="ghost" size="icon" class="h-8 w-8 rounded-full bg-white text-text-primary hover:text-primary">
                     <span class="material-symbols-outlined text-xl">favorite</span>
-                  </button>
-                  <button class="flex h-8 w-8 items-center justify-center rounded-full bg-white text-text-primary hover:text-primary">
+                  </Button>
+                  <Button variant="ghost" size="icon" class="h-8 w-8 rounded-full bg-white text-text-primary hover:text-primary">
                     <span class="material-symbols-outlined text-xl">visibility</span>
-                  </button>
+                  </Button>
                 </div>
-                <button class="absolute bottom-0 w-full translate-y-full bg-black py-2 text-white transition-transform duration-300 group-hover:translate-y-0">
+                <Button 
+                  class="absolute bottom-0 w-full translate-y-full bg-black py-2 text-white transition-transform duration-300 group-hover:translate-y-0"
+                  @click="handleAddToCart(product.id)"
+                >
                   Add To Cart
-                </button>
+                </Button>
               </div>
               <div class="mt-4">
                 <p class="font-medium">{{ product.name }}</p>
@@ -258,6 +274,7 @@
           <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div
               class="relative flex min-h-[300px] flex-col items-start justify-end rounded bg-black p-6 text-white md:min-h-[500px]"
+              v-if="newArrivalProducts.length > 0"
               :style="{ backgroundImage: `url('${newArrivalProducts[0].image}')` }"
             >
               <div class="absolute inset-0 bg-cover bg-bottom bg-no-repeat opacity-50"></div>
@@ -289,9 +306,17 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRouter } from 'vue-router';
+import { categoryApi } from '@/services/category';
+import { productApi } from '@/services/product';
+import { Button } from '@/components/ui/button';
+import { useCartStore } from '@/stores/cart';
+import type { CategoryResponseDto } from '@/types/category';
+import type { ProductResponseDto } from '@/types/product';
 
+const router = useRouter();
 const flashSalesContainer = ref<HTMLElement | null>(null);
+const cartStore = useCartStore();
 
 // Countdown timer
 const countdown = ref({
@@ -319,17 +344,7 @@ const heroBanner = ref({
 });
 
 // Categories
-const categories = ref([
-  { id: 1, name: "Woman's Fashion", hasChildren: true },
-  { id: 2, name: "Men's Fashion", hasChildren: true },
-  { id: 3, name: 'Electronics', hasChildren: false },
-  { id: 4, name: 'Home & Lifestyle', hasChildren: false },
-  { id: 5, name: 'Medicine', hasChildren: false },
-  { id: 6, name: 'Sports & Outdoor', hasChildren: false },
-  { id: 7, name: "Baby's & Toys", hasChildren: false },
-  { id: 8, name: 'Groceries & Pets', hasChildren: false },
-  { id: 9, name: 'Health & Beauty', hasChildren: false },
-]);
+const categories = ref<CategoryResponseDto[]>([]);
 
 // Product Categories
 const productCategories = ref([
@@ -341,114 +356,81 @@ const productCategories = ref([
   { id: 6, name: 'Gaming', icon: 'stadia_controller' },
 ]);
 
-// Flash Sale Products
-const flashSaleProducts = ref([
-  {
-    id: 1,
-    name: 'Organic Cotton Tee',
-    price: 35.00,
-    originalPrice: 58.33,
-    discount: 40,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCqJFXx0NC9JH-Uin8yYR6dMR5sdJY24a3KApzrw0wNUbN6SR0eO9T1Oy60G3kNqm6zaXzDfvJIev84Vg1YwcbV3dNeuBWH1iMBHxNaE4ZXxjHWhkGJauT66OtQFiWqK_nP6TQZg14BbCHrsJozuYr3rBuQxsVPDXRy90kRtcVkKIRwWH3bvGxA1aPsuCs7ACNOAa77hmK8Tlq8YxrrpyrmSW_fPBl2uktbiwGD7FMNi2kOY1Bc8jPOaDRSXeaO3IiNWBFpTO-Ewag',
-  },
-  {
-    id: 2,
-    name: 'Recycled Denim Jeans',
-    price: 89.00,
-    originalPrice: 136.92,
-    discount: 35,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAO7m66uNd9tZAG74XB4lG5dDsm3TSQlIxR4zrTFd1Kyx5HTkEQJgtdFvPslijBjsNoi8y2EFwjn-Ir1uORhEO0fkBRQVT2bxRUBJzTzLmkmHFhiBdGYc0rHsUkHZlIewt_zBKJ9jIcurcBC_tAMLO2FwQNFZAMSzwcsHiorPMpcykRvkVJcGuqEIv2Otv7gNcr3Ct7gi1JWvgczZcHkjKG-hEhcqygSQ0dN7YjDcm1GIAWeI-t5se9aA65ZQTPNYB1HU-rnv0Oo3U',
-  },
-  {
-    id: 3,
-    name: 'Linen Blend Jumpsuit',
-    price: 120.00,
-    originalPrice: 171.43,
-    discount: 30,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBc3aNL-EpeBmXSyg_NGLAYsJHEQ7WdJYutX-euRhB0Lpt6lfr4QDU4TSCOId3mLlPvZ-SiFvFD1ohWnLpfzGTXIlwvDMS3FIXhSi49cXByn0W0kSXf3VXrRZkk5RQFDz0fEN_IQd-YXPsrcChsfRhNnYJNwAoCMD_hTMb05D0B_kRlEf0Z2MdO5kj7-KBb7DXK7DzNHxLfuMeP4H1EnoKnFrxIB4ZcU82sFzdZI8LgHfaEsCNAwN_vPCwWe2_DMxfLzCWSh2PcE84',
-  },
-  {
-    id: 4,
-    name: 'Bamboo Fiber Scarf',
-    price: 45.00,
-    originalPrice: 60.00,
-    discount: 25,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDqQb-3vCKr5Cy54zJPak9YvAstNSCOBT-dXGbKQwPWC4yEvsDQkg8o8X0iGhDofqdpBH5e7bFQFhhVkOSRe1vUNjoZLVbaSG8MwGqzJlSo08L6fnMbdBsfIDznNXTs1-TgkMPrCjiO9Kwrr56N6dqYN2xQR33VV4kGTcL767MwE2CRoIpgVj2pnBEh7A7s22MPI9dnbjw8MkTgpDEuVLyXvLQAYpsmd7VWoKa0cROi2NCFDjCaBlXuPOXodpDd8KixyIpWflTPSdU',
-  },
-  {
-    id: 5,
-    name: 'Hemp Canvas Tote Bag',
-    price: 55.00,
-    originalPrice: 110.00,
-    discount: 50,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAmovUiBG-1l0k7J1hST6-eoI_Bxlb5U42zsxEQpax78_nuA4YlKNdAovadj7M_k9qFzI20XcWdmi7pagwyNnt0GtytwveUD0Y_3vIZDs122ebLcl5hlXbMISxb1FiIA2w7ljOsCNFIA0dfTEBbGEBtutPx9A9863-sTTxURJdHssFg3zuZQAm1mghVHd83K5_jxDps5k8mRhfWLULPcYwxBDBdIVOYmIz9xS7PSaawJjH-cktzGypDoIllwUliQOVO2hZ67iAPBG4',
-  },
-]);
+// Extended product type for display with additional UI fields
+interface DisplayProduct extends ProductResponseDto {
+  image: string;
+  discount: number;
+  originalPrice: number;
+  price: number; // Converted from priceCents
+}
+
+// Flash Sale Products (Using New Arrivals for now as placeholder)
+const flashSaleProducts = ref<DisplayProduct[]>([]);
 
 // Best Selling Products
-const bestSellingProducts = ref([
-  {
-    id: 1,
-    name: 'Hemp Canvas Tote Bag',
-    price: 55.00,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAmovUiBG-1l0k7J1hST6-eoI_Bxlb5U42zsxEQpax78_nuA4YlKNdAovadj7M_k9qFzI20XcWdmi7pagwyNnt0GtytwveUD0Y_3vIZDs122ebLcl5hlXbMISxb1FiIA2w7ljOsCNFIA0dfTEBbGEBtutPx9A9863-sTTxURJdHssFg3zuZQAm1mghVHd83K5_jxDps5k8mRhfWLULPcYwxBDBdIVOYmIz9xS7PSaawJjH-cktzGypDoIllwUliQOVO2hZ67iAPBG4',
-  },
-  {
-    id: 2,
-    name: 'Cork Leather Wallet',
-    price: 40.00,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDXuZ8uwy3dN69FS0oZAipw_d1C41zS7Q3pY1ViV3aWgBqqGPVwpGARRf8BSaIfM8MtSji_RcoWoDOzieP1HjmPw2coUSC1unVa1ZI6jQB3NyHWk5C77kHOxTiqCqWxQQ7Ds3tXnKxSIgJxpnjjK00WAk8klqIox62Yj4loe4VIQ6mQjvaRLwUQAyMB3YvEcHBcI-ya4Qaff4krGySp___g2Gqgote169KI-NWCggzky9wgCw7ppjh-DOfWKwVGhZoSZKTfpo-Vxgk',
-  },
-  {
-    id: 3,
-    name: 'Fair Trade Sundress',
-    price: 95.00,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDqJfwJ1ECb_F0nsSF5FZfm7lOQmh_MiHI31ACcEekzzfc54qPc1OeKQS3hg_SOpPFrmq5bL75PZnrC2KztJqUx3pT7jhKBD3AxItlQL5ZX5p34VImNNVqg6pOBbZG-izBSEbe2Zc4aeQFI0dw_X5MATObvVwc_h9cD09kVR8e2TkkloAwkcjkP4YFZGPKpV8R21sUc9DATpoECmckPy8T6aiOoQ0NjsBXsKL4lktOZc81oNAlYCpm0ovspwcJN5rogZS3Jw9Yo2-o',
-  },
-  {
-    id: 4,
-    name: 'Reclaimed Wood Sunglasses',
-    price: 75.00,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB_q5SLA5IZmfbUy0_Qr6w_Gm_zeNflgmEWZ8uUq9u6XT4svt-xVn-JcER3XOwR50PyMZs_MFc7DLBn-4rPrTNfODQ_77R-XRgr7etbgPfipMgA2Zj33kksGz-TcqYd5W492x1IjUvrldK1_QnUHE7nlmfi-wSRShUFVZgUff3bIl7EWpbcmlnVVfI0in6CtL6RO_w9nukFrctgN0zrKV6Mo6Qo0hAMl0t6ltNYxJVfYlT7rmD4PFxaOpfQDUq3X3U3PotFEl8v_dI',
-  },
-]);
+const bestSellingProducts = ref<DisplayProduct[]>([]);
+
+// New Arrival Products
+const newArrivalProducts = ref<DisplayProduct[]>([]);
 
 // Music Banner
 const musicBanner = ref({
   image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCqJFXx0NC9JH-Uin8yYR6dMR5sdJY24a3KApzrw0wNUbN6SR0eO9T1Oy60G3kNqm6zaXzDfvJIev84Vg1YwcbV3dNeuBWH1iMBHxNaE4ZXxjHWhkGJauT66OtQFiWqK_nP6TQZg14BbCHrsJozuYr3rBuQxsVPDXRy90kRtcVkKIRwWH3bvGxA1aPsuCs7ACNOAa77hmK8Tlq8YxrrpyrmSW_fPBl2uktbiwGD7FMNi2kOY1Bc8jPOaDRSXeaO3IiNWBFpTO-Ewag',
 });
 
-// New Arrival Products
-const newArrivalProducts = ref([
-  {
-    id: 1,
-    name: 'PlayStation 5',
-    description: 'Black and White version of the PS5 coming out on sale.',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAO7m66uNd9tZAG74XB4lG5dDsm3TSQlIxR4zrTFd1Kyx5HTkEQJgtdFvPslijBjsNoi8y2EFwjn-Ir1uORhEO0fkBRQVT2bxRUBJzTzLmkmHFhiBdGYc0rHsUkHZlIewt_zBKJ9jIcurcBC_tAMLO2FwQNFZAMSzwcsHiorPMpcykRvkVJcGuqEIv2Otv7gNcr3Ct7gi1JWvgczZcHkjKG-hEhcqygSQ0dN7YjDcm1GIAWeI-t5se9aA65ZQTPNYB1HU-rnv0Oo3U',
-  },
-  {
-    id: 2,
-    name: "Women's Collections",
-    description: 'Featured woman collections that give you another vibe.',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBc3aNL-EpeBmXSyg_NGLAYsJHEQ7WdJYutX-euRhB0Lpt6lfr4QDU4TSCOId3mLlPvZ-SiFvFD1ohWnLpfzGTXIlwvDMS3FIXhSi49cXByn0W0kSXf3VXrRZkk5RQFDz0fEN_IQd-YXPsrcChsfRhNnYJNwAoCMD_hTMb05D0B_kRlEf0Z2MdO5kj7-KBb7DXK7DzNHxLfuMeP4H1EnoKnFrxIB4ZcU82sFzdZI8LgHfaEsCNAwN_vPCwWe2_DMxfLzCWSh2PcE84',
-  },
-  {
-    id: 3,
-    name: 'Speakers',
-    description: 'Amazon wireless speakers',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDqQb-3vCKr5Cy54zJPak9YvAstNSCOBT-dXGbKQwPWC4yEvsDQkg8o8X0iGhDofqdpBH5e7bFQFhhVkOSRe1vUNjoZLVbaSG8MwGqzJlSo08L6fnMbdBsfIDznNXTs1-TgkMPrCjiO9Kwrr56N6dqYN2xQR33VV4kGTcL767MwE2CRoIpgVj2pnBEh7A7s22MPI9dnbjw8MkTgpDEuVLyXvLQAYpsmd7VWoKa0cROi2NCFDjCaBlXuPOXodpDd8KixyIpWflTPSdU',
-  },
-  {
-    id: 4,
-    name: 'Perfume',
-    description: 'GUCCI INTENSE OUD EDP',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAmovUiBG-1l0k7J1hST6-eoI_Bxlb5U42zsxEQpax78_nuA4YlKNdAovadj7M_k9qFzI20XcWdmi7pagwyNnt0GtytwveUD0Y_3vIZDs122ebLcl5hlXbMISxb1FiIA2w7ljOsCNFIA0dfTEBbGEBtutPx9A9863-sTTxURJdHssFg3zuZQAm1mghVHd83K5_jxDps5k8mRhfWLULPcYwxBDBdIVOYmIz9xS7PSaawJjH-cktzGypDoIllwUliQOVO2hZ67iAPBG4',
-  },
-]);
+// Fetch data
+const fetchData = async () => {
+  try {
+    // Fetch Categories
+    const categoryRes = await categoryApi.getAll({ page: 1, size: 10 });
+    if (categoryRes.success) {
+      categories.value = categoryRes.data.content.map(c => ({
+        ...c,
+        hasChildren: false // Backend doesn't support hierarchy yet
+      }));
+    }
+
+    // Fetch Products (New Arrivals)
+    const productRes = await productApi.getAll({ 
+      page: 1, 
+      size: 10, 
+      sort: 'createdAt', 
+      direction: 'DESC' 
+    });
+    
+    if (productRes.success) {
+      const products: DisplayProduct[] = productRes.data.content.map(p => ({
+        ...p,
+        price: p.priceCents / 100, // Convert cents to dollars
+        originalPrice: (p.priceCents * 1.2) / 100, // Fake original price
+        discount: 20,
+        image: p.imageUrl || 'https://placehold.co/400',
+      }));
+
+      newArrivalProducts.value = products.slice(0, 4);
+      flashSaleProducts.value = products;
+      bestSellingProducts.value = products.slice(0, 4);
+    }
+  } catch (error) {
+    // Error handled silently - page will show empty state
+  }
+};
 
 // Methods
 const formatTime = (value: number): string => {
   return value.toString().padStart(2, '0');
+};
+
+const handleProductClick = (product: ProductResponseDto) => {
+  router.push(`/products/${product.slug}`);
+};
+
+const handleAddToCart = async (productId: number) => {
+  try {
+    await cartStore.addItem(productId, 1);
+  } catch (error) {
+    // Error is handled by cart store with toast
+  }
 };
 
 const scrollFlashSales = (direction: 'left' | 'right') => {
@@ -510,6 +492,11 @@ const updateMusicCountdown = () => {
 onMounted(() => {
   countdownInterval = setInterval(updateCountdown, 1000);
   musicCountdownInterval = setInterval(updateMusicCountdown, 1000);
+  fetchData();
+  // Initialize cart if not already loaded
+  if (cartStore.cartCount === 0) {
+    cartStore.initCart();
+  }
 });
 
 onUnmounted(() => {

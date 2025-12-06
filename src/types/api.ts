@@ -1,13 +1,23 @@
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   message: string;
+  code?: number;
   data: T;
-  errors?: string[];
+  timestamp?: string;
 }
 
-export interface ApiError {
-  success: false;
-  message: string;
-  errors?: string[];
+export interface PaginationRequest {
+  page: number;
+  size: number;
+  sort?: string;
+  direction?: 'ASC' | 'DESC';
 }
 
+export interface PaginationResponse<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+}

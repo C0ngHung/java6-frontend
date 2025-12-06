@@ -6,15 +6,15 @@
         <div class="mx-auto flex max-w-7xl items-center justify-between gap-8 whitespace-nowrap px-4 py-4 sm:px-6 lg:px-8">
           <div class="flex items-center gap-4">
             <RouterLink to="/">
-              <h2 class="text-text-primary text-2xl font-bold leading-tight tracking-[-0.015em]">CH Fashion</h2>
+              <h2 class="text-text-primary text-2xl font-bold leading-tight tracking-[-0.015em]">CH Ecommerce</h2>
             </RouterLink>
           </div>
           <div class="hidden items-center gap-6 md:flex">
             <RouterLink to="/" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">Home</RouterLink>
             <a href="#contact" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">Contact</a>
             <a href="#about" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">About</a>
-            <RouterLink v-if="!authStore.isAuthenticated" to="/signup" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">Sign Up</RouterLink>
-            <RouterLink v-else to="/dashboard" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">Dashboard</RouterLink>
+            <RouterLink v-if="!authStore.isAuthenticated" to="/register" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">Sign Up</RouterLink>
+            <RouterLink v-else-if="authStore.isAdmin" to="/dashboard" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">Dashboard</RouterLink>
           </div>
           <div class="flex items-center gap-4">
             <div class="relative hidden lg:block">
@@ -30,10 +30,85 @@
             <RouterLink to="/wishlist" class="relative flex h-8 w-8 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-transparent text-text-primary transition-colors hover:text-primary">
               <span class="material-symbols-outlined text-2xl">favorite</span>
             </RouterLink>
-            <RouterLink to="/cart" class="relative flex h-8 w-8 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-transparent text-text-primary transition-colors hover:text-primary">
+            <RouterLink to="/cart" class="relative flex h-8 w-8 cursor-pointer items-center justify-center overflow-visible rounded-full bg-transparent text-text-primary transition-colors hover:text-primary">
               <span class="material-symbols-outlined text-2xl">shopping_cart</span>
-              <span v-if="cartCount > 0" class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">{{ cartCount }}</span>
+              <span
+                v-if="cartStore.cartCount > 0"
+                class="absolute -top-1 -right-1 flex min-w-[20px] h-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-white shadow-lg ring-2 ring-white dark:ring-background-dark"
+              >
+                {{ cartStore.cartCount > 99 ? '99+' : cartStore.cartCount }}
+              </span>
             </RouterLink>
+            <!-- User Info Dropdown -->
+            <div
+              v-if="authStore.isAuthenticated && authStore.user"
+              class="relative group"
+              @mouseenter="showUserDropdown = true"
+              @mouseleave="showUserDropdown = false"
+            >
+              <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary-background cursor-pointer">
+                <span class="material-symbols-outlined text-xl text-text-primary">person</span>
+                <span class="text-sm font-medium text-text-primary">{{ authStore.user.fullName }}</span>
+              </div>
+              <div class="flex sm:hidden items-center justify-center w-8 h-8 rounded-full bg-secondary-background cursor-pointer">
+                <span class="material-symbols-outlined text-xl text-text-primary">person</span>
+              </div>
+
+              <!-- Bridge Element - Tạo cầu nối vô hình giữa trigger và dropdown để dễ hover -->
+              <div
+                v-show="showUserDropdown"
+                class="absolute right-0 top-full w-48 h-2 pointer-events-auto z-40"
+                aria-hidden="true"
+                @mouseenter="showUserDropdown = true"
+                @mouseleave="showUserDropdown = false"
+              ></div>
+
+              <!-- Dropdown Menu -->
+              <div
+                v-show="showUserDropdown"
+                class="absolute right-0 mt-2 w-48 bg-background-light dark:bg-secondary-dark rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-50"
+                role="menu"
+                aria-orientation="vertical"
+                aria-labelledby="user-menu-button"
+                @mouseenter="showUserDropdown = true"
+                @mouseleave="showUserDropdown = false"
+              >
+                <div class="py-1" role="none">
+                  <RouterLink
+                    to="/account"
+                    class="flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-secondary-background dark:hover:bg-background-dark transition-colors"
+                    role="menuitem"
+                    tabindex="0"
+                    @click="showUserDropdown = false"
+                  >
+                    <span class="material-symbols-outlined text-xl">account_circle</span>
+                    <span>Manage My Account</span>
+                  </RouterLink>
+                  <RouterLink
+                    to="/orders"
+                    class="flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-secondary-background dark:hover:bg-background-dark transition-colors"
+                    role="menuitem"
+                    tabindex="0"
+                    @click="showUserDropdown = false"
+                  >
+                    <span class="material-symbols-outlined text-xl">shopping_bag</span>
+                    <span>My Order</span>
+                  </RouterLink>
+                  <button
+                    type="button"
+                    class="w-full flex items-center gap-3 px-4 py-2 text-sm text-text-primary hover:bg-secondary-background dark:hover:bg-background-dark transition-colors text-left"
+                    role="menuitem"
+                    tabindex="0"
+                    @click="handleLogout"
+                    @keydown.enter="handleLogout"
+                    @keydown.space.prevent="handleLogout"
+                  >
+                    <span class="material-symbols-outlined text-xl">logout</span>
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </header>
@@ -43,13 +118,16 @@
         <slot />
       </main>
 
+      <!-- Toast Container -->
+      <ToastContainer />
+
       <!-- Footer -->
       <footer class="w-full bg-black text-white pt-16 pb-6">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-16">
             <!-- Subscribe Section -->
             <div class="space-y-4">
-              <h3 class="text-2xl font-bold font-display">CH Fashion</h3>
+              <h3 class="text-2xl font-bold font-display">CH Ecommerce</h3>
               <p class="font-medium">Subscribe</p>
               <p class="text-gray-300">Get 10% off your first order</p>
               <div class="relative">
@@ -73,9 +151,9 @@
             <!-- Support Section -->
             <div class="space-y-4">
               <h3 class="text-xl font-medium">Support</h3>
-              <p class="text-gray-300">111 Bijoy sarani, Dhaka,<br />DH 1515, Bangladesh.</p>
-              <p class="text-gray-300">chfashion@gmail.com</p>
-              <p class="text-gray-300">+88015-88888-9999</p>
+              <p class="text-gray-300">108/4 Nguyễn Văn Khối, Hạnh Thông Tây,<br />HCM 70000, Vietnam</p>
+              <p class="text-gray-300">C0ngHungDCH@gmail.com</p>
+              <p class="text-gray-300">+84-9999-9999</p>
             </div>
 
             <!-- Account Section -->
@@ -83,12 +161,12 @@
               <h3 class="text-xl font-medium">Account</h3>
               <ul class="space-y-3 text-gray-300">
                 <li>
-                  <RouterLink to="/dashboard" class="hover:text-white">My Account</RouterLink>
+                  <RouterLink to="/account" class="hover:text-white">My Account</RouterLink>
                 </li>
                 <li v-if="!authStore.isAuthenticated">
                   <RouterLink to="/login" class="hover:text-white">Login / Register</RouterLink>
                 </li>
-                <li v-else>
+                <li v-else-if="authStore.isAdmin">
                   <RouterLink to="/dashboard" class="hover:text-white">Dashboard</RouterLink>
                 </li>
                 <li>
@@ -187,17 +265,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { RouterLink } from 'vue-router';
+import { ref, onMounted } from 'vue';
+import { RouterLink, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { useCartStore } from '@/stores/cart';
 import { useNavigation } from '@/composables/useNavigation';
+import { useToast } from '@/composables/useToast';
+import { getErrorMessage, DEFAULT_ERROR_MESSAGES } from '@/utils/getErrorMessage';
+import ToastContainer from '@/components/ToastContainer.vue';
 
+const router = useRouter();
 const authStore = useAuthStore();
+const cartStore = useCartStore();
+const toast = useToast();
 const { navigateToSearch } = useNavigation();
 
 const searchQuery = ref('');
-const cartCount = ref(2);
 const subscribeEmail = ref('');
+const showUserDropdown = ref(false);
 
 const handleSearch = () => {
   navigateToSearch(searchQuery.value);
@@ -208,5 +293,23 @@ const handleSubscribe = () => {
     subscribeEmail.value = '';
   }
 };
+
+const handleLogout = async () => {
+  try {
+    await authStore.logout();
+    toast.success('Logged out successfully');
+    router.push({ name: 'Home' });
+  } catch (error: any) {
+    console.error('Logout error:', error);
+    toast.error(getErrorMessage(error, DEFAULT_ERROR_MESSAGES.LOGOUT));
+  } finally {
+    showUserDropdown.value = false;
+  }
+};
+
+onMounted(() => {
+  // Initialize cart on layout mount
+  cartStore.initCart();
+});
 </script>
 

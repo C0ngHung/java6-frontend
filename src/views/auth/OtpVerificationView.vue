@@ -28,14 +28,14 @@
             </div>
 
             <!-- Error Message -->
-            <div v-if="error" class="mb-4 rounded-md bg-red-50 dark:bg-red-900/20 p-4">
-              <p class="text-sm font-medium text-red-800 dark:text-red-200">{{ error }}</p>
-            </div>
+            <Alert v-if="error" variant="destructive" class="mb-4">
+              <AlertDescription>{{ error }}</AlertDescription>
+            </Alert>
 
             <!-- Success Message -->
-            <div v-if="success" class="mb-4 rounded-md bg-green-50 dark:bg-green-900/20 p-4">
-              <p class="text-sm font-medium text-green-800 dark:text-green-200">{{ success }}</p>
-            </div>
+            <Alert v-if="success" variant="success" class="mb-4">
+              <AlertDescription>{{ success }}</AlertDescription>
+            </Alert>
 
             <!-- OTP Input Form -->
             <form @submit.prevent="handleVerifyOtp" class="space-y-6">
@@ -121,9 +121,9 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { RouterLink } from 'vue-router';
-import { authApi } from '@/api/auth';
+import { useRouter, useRoute, RouterLink } from 'vue-router';
+import { authApi } from '@/services/auth';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const router = useRouter();
 const route = useRoute();
@@ -148,7 +148,7 @@ const isOtpComplete = computed(() => {
   return otpDigits.every((digit) => digit !== '');
 });
 
-const setOtpInputRef = (el: any, index: number) => {
+const setOtpInputRef = (el: HTMLInputElement | null, index: number) => {
   if (el) {
     otpInputRefs.value[index] = el as HTMLInputElement;
   }

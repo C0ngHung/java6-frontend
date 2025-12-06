@@ -17,14 +17,14 @@
             <p class="mt-3 sm:mt-4 mb-6 sm:mb-8 text-black dark:text-white text-sm sm:text-base text-center lg:text-left">Enter your details below</p>
 
             <!-- Error Message -->
-            <div v-if="error" class="mb-4 rounded-md bg-red-50 dark:bg-red-900/20 p-4">
-              <p class="text-sm font-medium text-red-800 dark:text-red-200">{{ error }}</p>
-            </div>
+            <Alert v-if="error" variant="destructive" class="mb-4">
+              <AlertDescription>{{ error }}</AlertDescription>
+            </Alert>
 
             <!-- Success Message -->
-            <div v-if="success" class="mb-4 rounded-md bg-green-50 dark:bg-green-900/20 p-4">
-              <p class="text-sm font-medium text-green-800 dark:text-green-200">{{ success }}</p>
-            </div>
+            <Alert v-if="success" variant="success" class="mb-4">
+              <AlertDescription>{{ success }}</AlertDescription>
+            </Alert>
 
             <form @submit.prevent="handleSignUp" class="space-y-4 sm:space-y-5 lg:space-y-6" method="POST">
               <!-- Full Name Input -->
@@ -138,11 +138,11 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
-import { useRouter } from 'vue-router';
-import { RouterLink } from 'vue-router';
-import { authApi } from '@/api/auth';
+import { useRouter, RouterLink } from 'vue-router';
+import { authApi } from '@/services/auth';
 import type { RegisterRequest } from '@/types/user';
-import Input from '@/components/ui/Input.vue';
+import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const router = useRouter();
 

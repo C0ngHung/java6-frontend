@@ -1,8 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import type { RouteRecordRaw } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
-import DefaultLayout from '@/components/layouts/DefaultLayout.vue';
-import AuthLayout from '@/components/layouts/AuthLayout.vue';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -20,12 +18,6 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/register',
     name: 'Register',
-    component: () => import('@/views/auth/SignUpView.vue'),
-    meta: { requiresAuth: false, layout: 'auth' },
-  },
-  {
-    path: '/signup',
-    name: 'SignUp',
     component: () => import('@/views/auth/SignUpView.vue'),
     meta: { requiresAuth: false, layout: 'auth' },
   },
@@ -48,15 +40,69 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: false, layout: 'auth' },
   },
   {
+    path: '/products',
+    name: 'Products',
+    component: () => import('@/views/ProductsView.vue'),
+    meta: { requiresAuth: false, layout: 'default' },
+  },
+  {
+    path: '/products/:slug',
+    name: 'ProductDetail',
+    component: () => import('@/views/ProductDetailView.vue'),
+    meta: { requiresAuth: false, layout: 'default' },
+  },
+  {
+    path: '/cart',
+    name: 'Cart',
+    component: () => import('@/views/CartView.vue'),
+    meta: { requiresAuth: false, layout: 'default' },
+  },
+  {
+    path: '/checkout',
+    name: 'Checkout',
+    component: () => import('@/views/CheckoutView.vue'),
+    meta: { requiresAuth: true, layout: 'default' },
+  },
+  {
     path: '/dashboard',
     name: 'Dashboard',
     component: () => import('@/views/DashboardView.vue'),
     meta: { requiresAuth: true, layout: 'default' },
   },
   {
+    path: '/account',
+    name: 'Account',
+    component: () => import('@/views/AccountView.vue'),
+    meta: { requiresAuth: true, layout: 'default' },
+  },
+  {
+    path: '/orders',
+    name: 'Orders',
+    component: () => import('@/views/OrdersView.vue'),
+    meta: { requiresAuth: true, layout: 'default' },
+  },
+  {
     path: '/admin/dashboard',
     name: 'AdminDashboard',
     component: () => import('@/views/admin/AdminDashboardView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true, layout: 'default' },
+  },
+  {
+    path: '/admin/products',
+    name: 'AdminProducts',
+    component: () => import('@/views/admin/ProductManagementView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true, layout: 'default' },
+  },
+  {
+    path: '/admin/products/new',
+    name: 'AdminProductCreate',
+    component: () => import('@/views/admin/ProductFormView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true, layout: 'default' },
+  },
+  {
+    path: '/admin/products/:id/edit',
+    name: 'AdminProductEdit',
+    component: () => import('@/views/admin/ProductFormView.vue'),
     meta: { requiresAuth: true, requiresAdmin: true, layout: 'default' },
   },
   {
@@ -80,14 +126,34 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
-
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next({ name: 'Login', query: { redirect: to.fullPath } });
-  } else if ((to.name === 'Login' || to.name === 'Register') && authStore.isAuthenticated) {
-    next({ name: 'Dashboard' });
-  } else {
-    next();
+  
+  // Initialize auth state from localStorage if needed
+  if (!authStore.user && authStore.accessToken) {
+    authStore.initAuth();
   }
+
+  // Check if route requires authentication
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    // Redirect to login with return URL
+    next({ name: 'Login', query: { redirect: to.fullPath } });
+    return;
+  }
+
+  // Check if route requires admin role
+  if (to.meta.requiresAdmin && !authStore.isAdmin) {
+    // Redirect non-admin users away from admin routes
+    next({ name: 'Home' });
+    return;
+  }
+
+  // Redirect authenticated users away from login/register pages
+  if ((to.name === 'Login' || to.name === 'Register') && authStore.isAuthenticated) {
+    const redirect = (to.query.redirect as string) || '/dashboard';
+    next(redirect);
+    return;
+  }
+
+  next();
 });
 
 export default router;

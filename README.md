@@ -34,15 +34,23 @@ This is a full-featured e-commerce frontend application that provides a seamless
 
 ### 🛒 Shopping Features
 - ✅ Product browsing and search
-- ✅ Shopping cart management
-- ✅ Wishlist functionality
+- ✅ Product filtering by category
+- ✅ Product sorting and pagination
+- ✅ Shopping cart management (API ready)
+- ✅ Wishlist functionality (UI ready)
 - ✅ User dashboard
 - ✅ Responsive design for all devices
 
 ### 👨‍💼 Admin Features
 - ✅ Admin dashboard
+- ✅ Product management (CRUD operations)
+  - ✅ Product listing with search and filters
+  - ✅ Create new products
+  - ✅ Edit existing products
+  - ✅ Delete products with confirmation
+  - ✅ Stock status management
+  - ✅ Category assignment
 - ✅ User management (in progress)
-- ✅ Product management (in progress)
 - ✅ Order management (in progress)
 
 ### 🎨 UI/UX
@@ -50,8 +58,11 @@ This is a full-featured e-commerce frontend application that provides a seamless
 - ✅ Fully responsive (mobile, tablet, desktop)
 - ✅ Dark mode support
 - ✅ Smooth animations and transitions
-- ✅ Accessible components
+- ✅ Accessible components (WCAG 2.1 Level AA)
 - ✅ Loading states and error handling
+- ✅ Toast notifications for user feedback
+- ✅ Modal dialogs for confirmations
+- ✅ Form validation with real-time feedback
 
 ## 🛠️ Tech Stack
 
@@ -66,12 +77,19 @@ This is a full-featured e-commerce frontend application that provides a seamless
 
 ### Styling
 - **Tailwind CSS** - Utility-first CSS framework
-- **Shadcn-vue** - High-quality component library
+- **Reka UI** - Radix Vue primitives for accessible components
+- **Shadcn/Radix Vue** - High-quality component library
+- **Lucide Vue Next** - Icon library
 - **Custom CSS** - Additional styling and animations
 
 ### HTTP Client
 - **Axios** - Promise-based HTTP client
-- **Request/Response Interceptors** - Automatic token handling
+- **Request/Response Interceptors** - Automatic token handling and refresh
+
+### UI Libraries
+- **@vueuse/core** - Vue composition utilities
+- **vue-sonner** - Toast notification library
+- **reka-ui** - Radix Vue primitives
 
 ### Development Tools
 - **ESLint** - Code linting
@@ -82,17 +100,35 @@ This is a full-featured e-commerce frontend application that provides a seamless
 
 ```
 src/
-├── api/                    # API service layer
+├── services/               # API service layer (centralized)
 │   ├── auth.ts            # Authentication API endpoints
-│   └── index.ts           # API exports
+│   ├── product.ts         # Product API endpoints
+│   ├── category.ts        # Category API endpoints
+│   ├── cart.ts            # Cart API endpoints
+│   ├── order.ts           # Order API endpoints
+│   ├── user.ts            # User API endpoints
+│   └── index.ts           # Services exports
 │
 ├── components/             # Reusable Vue components
-│   └── ui/                # UI component library
-│       └── Input.vue      # Custom input component
+│   ├── admin/             # Admin-specific components
+│   │   └── ProductFormModal.vue
+│   ├── layouts/           # Layout components
+│   │   ├── DefaultLayout.vue
+│   │   └── AuthLayout.vue
+│   ├── ui/                # UI component library (Shadcn/Radix Vue)
+│   │   ├── button/        # Button components
+│   │   ├── input/         # Input components
+│   │   ├── dialog/        # Dialog/Modal components
+│   │   ├── table/         # Table components
+│   │   ├── select/        # Select components
+│   │   ├── checkbox/      # Checkbox components
+│   │   ├── card/          # Card components
+│   │   └── ...            # Other UI components
+│   └── ToastContainer.vue # Toast notification component
 │
 ├── composables/           # Vue composition functions
-│   ├── useAuth.ts         # Authentication logic
-│   ├── useNavigation.ts  # Navigation helpers
+│   ├── useNavigation.ts   # Navigation helpers
+│   ├── useToast.ts        # Toast notification composable
 │   └── index.ts           # Composables exports
 │
 ├── config/                # Configuration files
@@ -102,21 +138,36 @@ src/
 ├── constants/             # Application constants
 │   └── index.ts           # API endpoints, routes, storage keys
 │
+├── lib/                   # Library utilities
+│   └── utils.ts           # Utility functions (cn, etc.)
+│
 ├── router/                # Vue Router configuration
 │   └── index.ts           # Route definitions & guards
 │
 ├── stores/                # Pinia state management
-│   └── auth.ts            # Authentication store
+│   ├── auth.ts            # Authentication store
+│   └── cart.ts            # Cart store
+│
+├── tests/                 # Test files
+│   ├── components/        # Component tests
+│   ├── composables/       # Composable tests
+│   ├── services/          # Service/API tests
+│   ├── utils/             # Utility function tests
+│   ├── stores/            # Store tests
+│   └── e2e/               # End-to-end tests
 │
 ├── types/                 # TypeScript type definitions
 │   ├── api.ts             # API response types
 │   ├── auth.ts            # Authentication types
 │   ├── user.ts            # User-related types
 │   ├── admin.ts           # Admin types
+│   ├── product.ts         # Product types
+│   ├── category.ts        # Category types
+│   ├── cart.ts            # Cart types
 │   └── index.ts           # Type exports
 │
 ├── utils/                 # Utility functions
-│   └── index.ts           # Helper functions (cn, etc.)
+│   └── sidebarStorage.ts  # Sidebar state persistence
 │
 ├── views/                 # Page components
 │   ├── auth/              # Authentication pages
@@ -126,10 +177,14 @@ src/
 │   │   ├── ForgotPasswordView.vue
 │   │   └── PasswordResetView.vue
 │   ├── admin/             # Admin pages
-│   │   └── AdminDashboardView.vue
-│   ├── HomeView.vue
-│   ├── DashboardView.vue
-│   └── NotFoundView.vue
+│   │   ├── AdminDashboardView.vue
+│   │   ├── ProductManagementView.vue
+│   │   └── ProductFormView.vue
+│   ├── HomeView.vue       # Home page
+│   ├── ProductsView.vue   # Products listing page
+│   ├── DashboardView.vue  # User dashboard
+│   ├── LogoutView.vue     # Logout page
+│   └── NotFoundView.vue   # 404 page
 │
 ├── App.vue                # Root component
 ├── main.ts                # Application entry point
@@ -263,14 +318,17 @@ bun run preview
 ### 5. UI Components
 
 - **Reusable Components**: Modular component architecture
-- **Shadcn-vue Integration**: High-quality UI components
-- **Custom Components**: Tailored components for specific needs
-- **Responsive Design**: Mobile-first approach
+- **Shadcn/Radix Vue Integration**: High-quality, accessible UI components
+- **Component Library**: Comprehensive set of UI primitives (Button, Input, Dialog, Table, Select, etc.)
+- **Custom Components**: Tailored components for specific needs (ProductFormModal, ToastContainer)
+- **Responsive Design**: Mobile-first approach with Tailwind CSS
+- **Accessibility**: ARIA labels, keyboard navigation, focus management
 
 ## 🔌 API Integration
 
 The frontend communicates with a RESTful backend API. Key endpoints:
 
+### Authentication
 - `POST /api/v1/auth/register` - User registration
 - `POST /api/v1/auth/login` - User login
 - `POST /api/v1/auth/logout` - User logout
@@ -278,7 +336,35 @@ The frontend communicates with a RESTful backend API. Key endpoints:
 - `POST /api/v1/auth/otp/send` - Send OTP
 - `POST /api/v1/auth/otp/verify` - Verify OTP
 
-All API calls are type-safe and include proper error handling.
+### Products
+- `GET /api/v1/products` - Get products (with pagination, search, filters)
+- `GET /api/v1/products/:id` - Get product by ID
+- `POST /api/v1/products` - Create new product
+- `PUT /api/v1/products/:id` - Update product
+- `DELETE /api/v1/products/:id` - Delete product
+
+### Categories
+- `GET /api/v1/categories` - Get categories (with pagination)
+- `GET /api/v1/categories/:id` - Get category by ID
+- `POST /api/v1/categories` - Create new category
+- `PUT /api/v1/categories/:id` - Update category
+- `DELETE /api/v1/categories/:id` - Delete category
+
+### Cart
+- `GET /api/v1/cart` - Get user cart
+- `POST /api/v1/cart/items` - Add item to cart
+- `PUT /api/v1/cart/items/:id` - Update cart item
+- `DELETE /api/v1/cart/items/:id` - Remove item from cart
+
+All API calls are type-safe, include proper error handling, and follow the standard response format:
+```typescript
+{
+  success: boolean;
+  message: string;
+  data: T;
+  timestamp?: string;
+}
+```
 
 ## 🔒 Security
 
@@ -325,45 +411,65 @@ All components use Tailwind CSS responsive utilities for optimal display across 
 ### Planned Features
 
 - [ ] Product detail pages
-- [ ] Advanced search and filtering
+- [ ] Advanced search and filtering (price range, multiple categories)
 - [ ] Product reviews and ratings
 - [ ] Checkout process
-- [ ] Payment integration
+- [ ] Payment integration (Stripe, PayPal)
 - [ ] Order tracking
 - [ ] Email notifications
 - [ ] Social media integration
-- [ ] Multi-language support
+- [ ] Multi-language support (i18n)
 - [ ] PWA (Progressive Web App) support
 - [ ] Advanced admin features
-- [ ] Analytics dashboard
-- [ ] Real-time notifications
+  - [ ] User management (CRUD)
+  - [ ] Order management
+  - [ ] Analytics dashboard
+  - [ ] Inventory management
+- [ ] Real-time notifications (WebSocket)
+- [ ] Image upload to Cloudinary
+- [ ] Wishlist functionality (backend integration)
 
 ### Technical Improvements
 
-- [ ] Unit tests with Vitest
+- [ ] Unit tests with Vitest (target: 70%+ coverage)
 - [ ] E2E tests with Playwright
 - [ ] Performance optimization
-- [ ] SEO improvements
+  - [ ] Code splitting improvements
+  - [ ] Image lazy loading
+  - [ ] Virtual scrolling for long lists
+- [ ] SEO improvements (meta tags, sitemap)
 - [ ] Advanced caching strategies
 - [ ] Service worker implementation
+- [ ] Error tracking (Sentry integration)
 
 ## 📝 Code Quality
 
 ### Standards & Practices
 
-- **TypeScript**: Full type coverage
+- **TypeScript**: Full type coverage with strict mode
 - **ESLint**: Code linting and formatting
-- **Component Structure**: Consistent component organization
-- **Naming Conventions**: Clear, descriptive names
-- **Documentation**: Inline comments and JSDoc
-- **Error Handling**: Comprehensive error handling
+- **Component Structure**: Consistent component organization following Vue 3 Composition API
+- **Naming Conventions**: 
+  - camelCase for variables/functions
+  - PascalCase for components/classes
+  - UPPER_SNAKE_CASE for constants
+- **Documentation**: Inline comments for complex logic
+- **Error Handling**: Comprehensive error handling with toast notifications
+- **No Console Statements**: Production-ready code (no console.log/error in production)
 
 ### Code Organization
 
-- **Modular Structure**: Clear separation of concerns
+- **Modular Structure**: Clear separation of concerns (API → Service → Component)
 - **Reusable Code**: DRY (Don't Repeat Yourself) principle
 - **Clean Code**: Readable and maintainable
-- **Best Practices**: Following Vue.js and TypeScript best practices
+- **Best Practices**: Following Vue.js 3, TypeScript, and User Rules best practices
+- **Component Architecture**: 
+  - Single Responsibility Principle
+  - Composition over inheritance
+  - Props/Emits typing
+  - Computed properties for derived state
+- **API Layer**: Centralized API calls with type-safe requests/responses
+- **State Management**: Pinia stores for global state, local state for components
 
 ## 🤝 Contributing
 

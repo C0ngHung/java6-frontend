@@ -20,7 +20,7 @@ const authStore = useAuthStore();
 onMounted(async () => {
   try {
     await authStore.logout();
-  } catch (error) {
+  } catch {
     // Silently handle error - logout will clear local state anyway
   } finally {
     router.push({ name: 'Home' });

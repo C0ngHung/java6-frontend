@@ -19,7 +19,7 @@
     <header class="border-b border-gray-300 dark:border-gray-700 sticky top-0 bg-background-light dark:bg-background-dark z-50">
       <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         <div class="flex justify-between items-center gap-4">
-          <RouterLink to="/" class="text-xl sm:text-2xl font-bold font-display text-black dark:text-white flex-shrink-0">Exclusive</RouterLink>
+          <RouterLink to="/" class="text-xl sm:text-2xl font-bold font-display text-black dark:text-white flex-shrink-0">CH Ecommerce</RouterLink>
           
           <!-- Desktop Navigation -->
           <nav class="hidden lg:flex items-center space-x-8 xl:space-x-12">
@@ -27,7 +27,7 @@
             <a href="#contact" class="text-black dark:text-white hover:underline text-sm xl:text-base">Contact</a>
             <a href="#about" class="text-black dark:text-white hover:underline text-sm xl:text-base">About</a>
             <RouterLink v-if="!authStore.isAuthenticated" to="/register" class="text-black dark:text-white hover:underline text-sm xl:text-base">Sign Up</RouterLink>
-            <RouterLink v-else to="/dashboard" class="text-black dark:text-white hover:underline text-sm xl:text-base">Dashboard</RouterLink>
+            <RouterLink v-else-if="authStore.isAdmin" to="/dashboard" class="text-black dark:text-white hover:underline text-sm xl:text-base">Dashboard</RouterLink>
           </nav>
 
           <!-- Right Side Actions -->
@@ -47,8 +47,14 @@
             <RouterLink to="/wishlist" class="text-black dark:text-white p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-DEFAULT transition-colors">
               <span class="material-symbols-outlined text-xl sm:text-2xl">favorite</span>
             </RouterLink>
-            <RouterLink to="/cart" class="text-black dark:text-white p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-DEFAULT transition-colors">
+            <RouterLink to="/cart" class="relative text-black dark:text-white p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-DEFAULT transition-colors overflow-visible">
               <span class="material-symbols-outlined text-xl sm:text-2xl">shopping_cart</span>
+              <span
+                v-if="cartStore.cartCount > 0"
+                class="absolute top-0 right-0 flex min-w-[20px] h-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-white shadow-lg ring-2 ring-white dark:ring-background-dark"
+              >
+                {{ cartStore.cartCount > 99 ? '99+' : cartStore.cartCount }}
+              </span>
             </RouterLink>
           </div>
         </div>
@@ -66,7 +72,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-16">
           <!-- Subscribe Section -->
           <div class="space-y-4">
-            <h3 class="text-2xl font-bold font-display">CH Fashion</h3>
+            <h3 class="text-2xl font-bold font-display">CH Ecommerce</h3>
             <p class="font-medium">Subscribe</p>
             <p class="text-gray-300">Get 10% off your first order</p>
             <div class="relative">
@@ -105,7 +111,7 @@
               <li v-if="!authStore.isAuthenticated">
                 <RouterLink to="/login" class="hover:text-white">Login / Register</RouterLink>
               </li>
-              <li v-else>
+              <li v-else-if="authStore.isAdmin">
                 <RouterLink to="/dashboard" class="hover:text-white">Dashboard</RouterLink>
               </li>
               <li>
@@ -203,13 +209,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { useCartStore } from '@/stores/cart';
 import { useNavigation } from '@/composables/useNavigation';
 
 const authStore = useAuthStore();
 const { navigateToSearch } = useNavigation();
+const cartStore = useCartStore();
 
 const searchQuery = ref('');
 const subscribeEmail = ref('');
@@ -223,5 +231,10 @@ const handleSubscribe = () => {
     subscribeEmail.value = '';
   }
 };
+
+onMounted(() => {
+  // Initialize cart on layout mount
+  cartStore.initCart();
+});
 </script>
 

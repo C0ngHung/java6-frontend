@@ -17,8 +17,15 @@ export interface LoginRequest {
 export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
+  tokenType: string;
+  expiresIn: number;
   userId: number;
-  authorities: string[];
+  username: string;
+  email: string;
+  fullName: string;
+  phone: string;
+  roles: string[];
+  permissions: string[];
 }
 
 export interface RefreshTokenRequest {
@@ -27,6 +34,7 @@ export interface RefreshTokenRequest {
 
 export interface RefreshTokenResponse {
   accessToken: string;
+  refreshToken?: string;
 }
 
 export interface LogoutRequest {
@@ -64,3 +72,17 @@ export interface ActivationResponse {
   activated: boolean;
 }
 
+export interface UserUpdateRequest {
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  password?: string;
+}
+
+export interface UserResponse {
+  id: number;
+  username: string;
+  email: string;
+  fullName: string;
+  phone: string;
+}

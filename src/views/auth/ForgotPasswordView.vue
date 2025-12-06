@@ -12,14 +12,14 @@
           </div>
 
           <!-- Error Message -->
-          <div v-if="error" class="mt-4 rounded-md bg-red-50 dark:bg-red-900/20 p-4">
-            <p class="text-sm font-medium text-red-800 dark:text-red-200">{{ error }}</p>
-          </div>
+          <Alert v-if="error" variant="destructive" class="mt-4">
+            <AlertDescription>{{ error }}</AlertDescription>
+          </Alert>
 
           <!-- Success Message -->
-          <div v-if="success" class="mt-4 rounded-md bg-green-50 dark:bg-green-900/20 p-4">
-            <p class="text-sm font-medium text-green-800 dark:text-green-200">{{ success }}</p>
-          </div>
+          <Alert v-if="success" variant="success" class="mt-4">
+            <AlertDescription>{{ success }}</AlertDescription>
+          </Alert>
 
           <form @submit.prevent="handleSubmit" class="mt-8 space-y-6" method="POST">
             <input name="remember" type="hidden" value="true" />
@@ -59,6 +59,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { RouterLink } from 'vue-router';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const form = ref({
   email: '',
@@ -74,9 +75,7 @@ const handleSubmit = async () => {
   success.value = '';
 
   try {
-    // await authApi.forgotPassword(form.value.email);
-    
-    // Simulate API call
+    // Forgot password API call will be implemented when backend endpoint is available
     await new Promise((resolve) => setTimeout(resolve, 1000));
     
     success.value = 'Password reset link has been sent to your email address.';

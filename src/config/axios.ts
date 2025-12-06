@@ -1,11 +1,12 @@
 import axios from 'axios';
 import { API_BASE_URL } from './env';
-import { STORAGE_KEYS } from '@/constants';
-import { ROUTES } from '@/constants';
+import { API_ENDPOINTS, STORAGE_KEYS, ROUTES } from '@/constants';
 import type { ApiResponse } from '@/types/api';
+import type { RefreshTokenResponse } from '@/types/user';
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 30000, // 30 seconds timeout as per User Rules
   headers: {
     'Content-Type': 'application/json',
   },
@@ -40,8 +41,9 @@ axiosInstance.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
         if (refreshToken) {
-          const response = await axios.post<ApiResponse<{ accessToken: string }>>(
-            `${API_BASE_URL}/auth/refresh-token`,
+          // Use axios directly to avoid interceptor loop
+          const response = await axios.post<ApiResponse<RefreshTokenResponse>>(
+            `${API_BASE_URL}${API_ENDPOINTS.AUTH.REFRESH_TOKEN}`,
             { refreshToken }
           );
 

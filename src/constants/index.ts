@@ -8,6 +8,21 @@ export const API_ENDPOINTS = {
     OTP_SEND: '/auth/otp/send',
     OTP_VERIFY: '/auth/otp/verify',
   },
+  PRODUCT: {
+    BASE: '/products',
+  },
+  CATEGORY: {
+    BASE: '/categories',
+  },
+  CART: {
+    BASE: '/carts',
+  },
+  ORDER: {
+    BASE: '/orders',
+  },
+  USER: {
+    BASE: '/users',
+  },
 } as const;
 
 // Routes

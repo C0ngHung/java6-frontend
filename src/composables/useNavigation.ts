@@ -9,26 +9,8 @@ export const useNavigation = () => {
     }
   };
 
-  const navigateToLogin = (redirect?: string) => {
-    router.push({
-      name: 'Login',
-      query: redirect ? { redirect } : undefined,
-    });
-  };
-
-  const navigateToRegister = () => {
-    router.push({ name: 'Register' });
-  };
-
-  const navigateToDashboard = () => {
-    router.push({ name: 'Dashboard' });
-  };
-
   return {
     navigateToSearch,
-    navigateToLogin,
-    navigateToRegister,
-    navigateToDashboard,
   };
 };
 

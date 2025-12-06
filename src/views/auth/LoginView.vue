@@ -18,14 +18,14 @@
             </div>
 
             <!-- Error Message -->
-            <div v-if="error" class="mb-4 rounded-md bg-red-50 dark:bg-red-900/20 p-4">
-              <p class="text-sm font-medium text-red-800 dark:text-red-200">{{ error }}</p>
-            </div>
+            <Alert v-if="error" variant="destructive" class="mb-4">
+              <AlertDescription>{{ error }}</AlertDescription>
+            </Alert>
 
             <!-- Success Message -->
-            <div v-if="success" class="mb-4 rounded-md bg-green-50 dark:bg-green-900/20 p-4">
-              <p class="text-sm font-medium text-green-800 dark:text-green-200">{{ success }}</p>
-            </div>
+            <Alert v-if="success" variant="success" class="mb-4">
+              <AlertDescription>{{ success }}</AlertDescription>
+            </Alert>
 
             <form @submit.prevent="handleLogin" class="space-y-6 sm:space-y-8">
               <div class="space-y-6 sm:space-y-8">
@@ -99,9 +99,10 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { RouterLink } from 'vue-router';
+import { useRouter, useRoute, RouterLink } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { getErrorMessage, DEFAULT_ERROR_MESSAGES } from '@/utils/getErrorMessage';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const router = useRouter();
 const route = useRoute();
@@ -133,15 +134,23 @@ const handleLogin = async () => {
   try {
     await authStore.login(form.value.username, form.value.password);
     const redirect = route.query.redirect as string;
-    router.push(redirect || '/dashboard');
+    router.push(redirect || '/');
   } catch (err: any) {
-    const errorMessage = err.response?.data?.message || err.response?.data?.errors?.[0] || 'Đăng nhập thất bại. Vui lòng thử lại.';
+    // Use custom error messages
+    const errorCode = err.response?.data?.code;
+    const statusCode = err.response?.status;
     
-    // Handle specific error codes
-    if (err.response?.data?.errorCode === 'ACCOUNT_NOT_ACTIVATED') {
+    // Handle specific error codes with custom messages
+    if (errorCode === 1002) { // BAD_CREDENTIALS
+      error.value = 'Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng thử lại.';
+    } else if (errorCode === 1007) { // ACCOUNT_NOT_ACTIVATED
       error.value = 'Tài khoản chưa được kích hoạt. Vui lòng kiểm tra email để kích hoạt tài khoản.';
+    } else if (statusCode === 401 && !errorCode) {
+      // HTTP 401 without error code usually means bad credentials
+      error.value = 'Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng thử lại.';
     } else {
-      error.value = errorMessage;
+      // For other errors, use custom error messages
+      error.value = getErrorMessage(err, DEFAULT_ERROR_MESSAGES.LOGIN);
     }
   } finally {
     loading.value = false;

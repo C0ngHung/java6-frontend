@@ -1,8 +1,3 @@
-/**
- * Retry utility for API calls with exponential backoff
- * Implements retry logic for transient failures as per User Rules
- */
-
 interface RetryOptions {
   maxRetries?: number;
   initialDelay?: number;
@@ -11,31 +6,36 @@ interface RetryOptions {
   retryCondition?: (error: unknown) => boolean;
 }
 
+interface ErrorWithResponse {
+  response?: {
+    status?: number;
+  };
+}
+
+const DEFAULT_MAX_RETRIES = 3;
+const DEFAULT_INITIAL_DELAY_MS = 1000;
+const DEFAULT_MAX_DELAY_MS = 10000;
+const DEFAULT_BACKOFF_MULTIPLIER = 2;
+const HTTP_STATUS_SERVER_ERROR_START = 500;
+const HTTP_STATUS_SERVER_ERROR_END = 600;
+
 const DEFAULT_OPTIONS: Required<RetryOptions> = {
-  maxRetries: 3,
-  initialDelay: 1000, // 1 second
-  maxDelay: 10000, // 10 seconds
-  backoffMultiplier: 2,
-  retryCondition: (error: unknown) => {
-    // Retry on network errors or 5xx server errors
+  maxRetries: DEFAULT_MAX_RETRIES,
+  initialDelay: DEFAULT_INITIAL_DELAY_MS,
+  maxDelay: DEFAULT_MAX_DELAY_MS,
+  backoffMultiplier: DEFAULT_BACKOFF_MULTIPLIER,
+  retryCondition: (error: unknown): boolean => {
     if (error && typeof error === 'object' && 'response' in error) {
-      const axiosError = error as { response?: { status?: number } };
-      if (axiosError.response?.status) {
-        const status = axiosError.response.status;
-        return status >= 500 && status < 600; // Server errors
+      const axiosError = error as ErrorWithResponse;
+      const status = axiosError.response?.status;
+      if (status !== undefined) {
+        return status >= HTTP_STATUS_SERVER_ERROR_START && status < HTTP_STATUS_SERVER_ERROR_END;
       }
     }
-    // Network error (no response)
     return true;
   },
 };
 
-/**
- * Retry a function with exponential backoff
- * @param fn Function to retry
- * @param options Retry options
- * @returns Promise that resolves with the function result
- */
 export async function retry<T>(
   fn: () => Promise<T>,
   options: RetryOptions = {}
@@ -49,24 +49,20 @@ export async function retry<T>(
     } catch (error: unknown) {
       lastError = error;
 
-      // Don't retry if condition is not met
       if (!opts.retryCondition(error)) {
         throw error;
       }
 
-      // Don't retry on last attempt
       if (attempt === opts.maxRetries) {
         break;
       }
 
-      // Calculate delay with exponential backoff
       const delay = Math.min(
         opts.initialDelay * Math.pow(opts.backoffMultiplier, attempt),
         opts.maxDelay
       );
 
-      // Wait before retrying
-      await new Promise((resolve) => setTimeout(resolve, delay));
+      await new Promise<void>((resolve) => setTimeout(resolve, delay));
     }
   }
 

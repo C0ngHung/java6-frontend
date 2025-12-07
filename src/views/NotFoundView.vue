@@ -2,12 +2,16 @@
   <div class="flex flex-1 items-center justify-center min-h-[60vh]">
     <div class="flex flex-col items-center gap-6 px-4 py-12 text-center">
       <div class="text-primary dark:text-primary">
-        <span class="material-symbols-outlined" style="font-size: 80px"> search_off </span>
+        <span
+          class="material-symbols-outlined"
+          style="font-size: 80px"
+          aria-hidden="true"
+        >
+          search_off
+        </span>
       </div>
       <div class="flex max-w-lg flex-col items-center gap-4">
-        <h1
-          class="text-black dark:text-white text-6xl md:text-8xl font-bold tracking-tighter"
-        >
+        <h1 class="text-black dark:text-white text-6xl md:text-8xl font-bold tracking-tighter">
           404
         </h1>
         <h2
@@ -23,6 +27,7 @@
       <RouterLink
         to="/"
         class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-6 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors"
+        aria-label="Go to homepage"
       >
         <span class="truncate">Go to Homepage</span>
       </RouterLink>

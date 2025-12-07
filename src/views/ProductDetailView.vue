@@ -12,7 +12,7 @@
     <div v-else-if="error" class="flex items-center justify-center min-h-[60vh]">
       <div class="text-center">
         <p class="text-lg font-semibold text-red-600 dark:text-red-400">{{ error }}</p>
-        <RouterLink to="/products" class="mt-4 inline-block text-primary hover:underline">
+        <RouterLink :to="PRODUCTS_PATH" class="mt-4 inline-block text-primary hover:underline">
           Back to Products
         </RouterLink>
       </div>
@@ -54,10 +54,10 @@
           <!-- Main Image -->
           <div
             class="w-full bg-center bg-no-repeat aspect-[4/5] bg-cover rounded-lg shadow-sm overflow-hidden"
-            :style="{ backgroundImage: `url('${selectedImage || product.imageUrl || 'https://placehold.co/600x750'}')` }"
+            :style="{ backgroundImage: `url('${selectedImage || product.imageUrl || DEFAULT_PLACEHOLDER_IMAGE}')` }"
           >
             <img
-              :src="selectedImage || product.imageUrl || 'https://placehold.co/600x750'"
+              :src="selectedImage || product.imageUrl || DEFAULT_PLACEHOLDER_IMAGE"
               :alt="product.name"
               class="w-full h-full object-cover"
             />
@@ -159,9 +159,13 @@
               :disabled="!isInStock || addingToCart"
               @click="handleAddToCart"
             >
-              <span v-if="addingToCart" class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-r-transparent"></span>
-              <span v-else class="material-symbols-outlined">shopping_bag</span>
-              {{ addingToCart ? 'Adding...' : 'Add to Cart' }}
+              <span
+                v-if="addingToCart"
+                class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-r-transparent"
+                aria-hidden="true"
+              ></span>
+              <span v-else class="material-symbols-outlined" aria-hidden="true">shopping_bag</span>
+              {{ addingToCart ? ADDING_TEXT : ADD_TO_CART_TEXT }}
             </Button>
           </div>
         </div>
@@ -182,10 +186,10 @@
             <div class="w-full bg-center bg-no-repeat aspect-[4/5] bg-cover rounded-lg overflow-hidden">
               <div
                 class="w-full h-full bg-cover bg-center group-hover:scale-105 transition-transform duration-300"
-                :style="{ backgroundImage: `url('${relatedProduct.imageUrl || 'https://placehold.co/400x500'}')` }"
+                :style="{ backgroundImage: `url('${relatedProduct.imageUrl || DEFAULT_RELATED_PLACEHOLDER_IMAGE}')` }"
               >
                 <img
-                  :src="relatedProduct.imageUrl || 'https://placehold.co/400x500'"
+                  :src="relatedProduct.imageUrl || DEFAULT_RELATED_PLACEHOLDER_IMAGE"
                   :alt="relatedProduct.name"
                   class="w-full h-full object-cover"
                 />
@@ -214,18 +218,35 @@ import { useCartStore } from '@/stores/cart';
 import Button from '@/components/ui/button/Button.vue';
 import type { ProductResponseDto } from '@/types/product';
 
+const PRODUCTS_PATH = '/products';
+const DEFAULT_PLACEHOLDER_IMAGE = 'https://placehold.co/600x750';
+const DEFAULT_RELATED_PLACEHOLDER_IMAGE = 'https://placehold.co/400x500';
+const DEFAULT_THUMBNAIL_IMAGE = 'https://placehold.co/150';
+const DEFAULT_CURRENCY_CODE = 'USD';
+const CENTS_TO_CURRENCY_DIVISOR = 100;
+const LOCALE_EN_US = 'en-US';
+const MIN_QUANTITY = 1;
+const MAX_THUMBNAILS = 4;
+const RELATED_PRODUCTS_COUNT = 4;
+const DEFAULT_QUANTITY_WHEN_IN_STOCK = 999;
+const ADDING_TEXT = 'Adding...';
+const ADD_TO_CART_TEXT = 'Add to Cart';
+const RELATED_PRODUCTS_PAGE = 0;
+const RELATED_PRODUCTS_SIZE = 4;
+const DEFAULT_SORT_FIELD = 'createdAt';
+const DEFAULT_SORT_DIRECTION = 'DESC';
+
 const route = useRoute();
 const router = useRouter();
 const cartStore = useCartStore();
 
-// State
 const product = ref<ProductResponseDto | null>(null);
 const relatedProducts = ref<ProductResponseDto[]>([]);
-const loading = ref(true);
+const loading = ref<boolean>(true);
 const error = ref<string | null>(null);
-const quantity = ref(1);
-const addingToCart = ref(false);
-const selectedImageIndex = ref(0);
+const quantity = ref<number>(MIN_QUANTITY);
+const addingToCart = ref<boolean>(false);
+const selectedImageIndex = ref<number>(0);
 
 // Computed
 const productImages = computed(() => {
@@ -234,9 +255,8 @@ const productImages = computed(() => {
   if (product.value.imageUrl) {
     images.push(product.value.imageUrl);
   }
-  // Generate thumbnails from main image (product images array will be used when available)
-  while (images.length < 4) {
-    images.push(product.value.imageUrl || 'https://placehold.co/150');
+  while (images.length < MAX_THUMBNAILS) {
+    images.push(product.value.imageUrl || DEFAULT_THUMBNAIL_IMAGE);
   }
   return images;
 });
@@ -254,43 +274,45 @@ const isInStock = computed(() => {
 });
 
 const availableQuantity = computed(() => {
-  if (!product.value) return 0;
+  if (!product.value) {
+    return 0;
+  }
   if (product.value.quantity === undefined || product.value.safetyStock === undefined) {
-    return isInStock.value ? 999 : 0;
+    return isInStock.value ? DEFAULT_QUANTITY_WHEN_IN_STOCK : 0;
   }
   return Math.max(0, product.value.quantity - (product.value.safetyStock || 0));
 });
 
 // Methods
-const formatPrice = (priceCents: number, currencyCode: string = 'USD'): string => {
-  const price = priceCents / 100;
-  return new Intl.NumberFormat('en-US', {
+const formatPrice = (priceCents: number, currencyCode: string = DEFAULT_CURRENCY_CODE): string => {
+  const price = priceCents / CENTS_TO_CURRENCY_DIVISOR;
+  return new Intl.NumberFormat(LOCALE_EN_US, {
     style: 'currency',
     currency: currencyCode,
   }).format(price);
 };
 
-const selectImage = (index: number) => {
+const selectImage = (index: number): void => {
   selectedImageIndex.value = index;
 };
 
-const handleIncreaseQuantity = () => {
+const handleIncreaseQuantity = (): void => {
   if (quantity.value < availableQuantity.value) {
     quantity.value++;
   }
 };
 
-const handleDecreaseQuantity = () => {
-  if (quantity.value > 1) {
+const handleDecreaseQuantity = (): void => {
+  if (quantity.value > MIN_QUANTITY) {
     quantity.value--;
   }
 };
 
-const handleQuantityInput = (event: Event) => {
+const handleQuantityInput = (event: Event): void => {
   const target = event.target as HTMLInputElement;
   const value = parseInt(target.value, 10);
-  if (isNaN(value) || value < 1) {
-    quantity.value = 1;
+  if (isNaN(value) || value < MIN_QUANTITY) {
+    quantity.value = MIN_QUANTITY;
   } else if (value > availableQuantity.value) {
     quantity.value = availableQuantity.value;
   } else {
@@ -298,7 +320,7 @@ const handleQuantityInput = (event: Event) => {
   }
 };
 
-const handleAddToCart = async () => {
+const handleAddToCart = async (): Promise<void> => {
   if (!product.value || !isInStock.value) {
     return;
   }
@@ -306,19 +328,18 @@ const handleAddToCart = async () => {
   addingToCart.value = true;
   try {
     await cartStore.addItem(product.value.id, quantity.value);
-    // Toast message is handled by cartStore.addItem()
-  } catch (err: any) {
+  } catch {
     // Error toast is handled by cartStore.addItem()
   } finally {
     addingToCart.value = false;
   }
 };
 
-const handleProductClick = (product: ProductResponseDto) => {
-  router.push(`/products/${product.slug}`);
+const handleProductClick = (product: ProductResponseDto): void => {
+  router.push(`${PRODUCTS_PATH}/${product.slug}`);
 };
 
-const fetchProduct = async () => {
+const fetchProduct = async (): Promise<void> => {
   loading.value = true;
   error.value = null;
 
@@ -336,31 +357,30 @@ const fetchProduct = async () => {
     } else {
       error.value = 'Product not found';
     }
-  } catch (err: any) {
-    error.value = err.response?.data?.message || 'Failed to load product';
+  } catch (err: unknown) {
+    const axiosError = err as { response?: { data?: { message?: string } } };
+    error.value = axiosError.response?.data?.message || 'Failed to load product';
   } finally {
     loading.value = false;
   }
 };
 
-const fetchRelatedProducts = async () => {
+const fetchRelatedProducts = async (): Promise<void> => {
   try {
     const response = await productApi.getAll({
-      page: 0,
-      size: 4,
-      sort: 'createdAt',
-      direction: 'DESC',
+      page: RELATED_PRODUCTS_PAGE,
+      size: RELATED_PRODUCTS_SIZE,
+      sort: DEFAULT_SORT_FIELD,
+      direction: DEFAULT_SORT_DIRECTION,
     });
 
     if (response.success && response.data?.content) {
-      // Filter out current product and get 4 related products
       relatedProducts.value = response.data.content
         .filter((p) => p.id !== product.value?.id)
-        .slice(0, 4);
+        .slice(0, RELATED_PRODUCTS_COUNT);
     }
-  } catch (err) {
+  } catch {
     // Silently fail for related products
-    // Error is logged by axios interceptor if needed
   }
 };
 

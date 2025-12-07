@@ -8,7 +8,7 @@
         <span class="text-text-light dark:text-text-dark">My Orders</span>
       </div>
       <div class="text-sm">
-        Welcome! <span class="text-primary">{{ authStore.user?.fullName || 'User' }}</span>
+        Welcome! <span class="text-primary">{{ authStore.user?.fullName || DEFAULT_USER_NAME }}</span>
       </div>
     </div>
 
@@ -26,7 +26,7 @@
     <!-- Empty State -->
     <div v-else-if="!orders || orders.length === 0" class="text-center py-12">
       <p class="text-text-secondary-light dark:text-text-secondary-dark mb-4">You haven't placed any orders yet.</p>
-      <RouterLink to="/products">
+      <RouterLink :to="PRODUCTS_PATH">
         <Button>Start Shopping</Button>
       </RouterLink>
     </div>
@@ -60,7 +60,7 @@
                 {{ formatPrice(order.totalAmountCents, order.currencyCode) }}
               </p>
               <p class="text-sm text-text-secondary-light dark:text-text-secondary-dark">
-                {{ order.items.length }} item{{ order.items.length !== 1 ? 's' : '' }}
+                {{ order.items.length }} item{{ order.items.length !== SINGLE_ITEM ? 's' : '' }}
               </p>
             </div>
           </div>
@@ -109,8 +109,9 @@
     <div v-if="orders && orders.length > 0 && totalPages > 1" class="mt-8 flex justify-center gap-2">
       <Button
         variant="outline"
-        :disabled="currentPage === 0"
+        :disabled="currentPage === MIN_PAGE"
         @click="goToPage(currentPage - 1)"
+        aria-label="Go to previous page"
       >
         Previous
       </Button>
@@ -121,6 +122,7 @@
         variant="outline"
         :disabled="currentPage >= totalPages - 1"
         @click="goToPage(currentPage + 1)"
+        aria-label="Go to next page"
       >
         Next
       </Button>
@@ -146,23 +148,33 @@ import type { OrderResponseDto } from '@/types/order';
 import type { PaginationResponse } from '@/types/api';
 import Button from '@/components/ui/button/Button.vue';
 import OrderDetailModal from '@/components/orders/OrderDetailModal.vue';
+import { ROUTES } from '@/constants';
+
+const PRODUCTS_PATH = '/products';
+const DEFAULT_CURRENCY_CODE = 'USD';
+const CENTS_TO_CURRENCY_DIVISOR = 100;
+const LOCALE_EN_US = 'en-US';
+const DEFAULT_PAGE_SIZE = 10;
+const DEFAULT_USER_NAME = 'User';
+const MIN_PAGE = 0;
+const SINGLE_ITEM = 1;
 
 const router = useRouter();
 const authStore = useAuthStore();
 const toast = useToast();
 
 const orders = ref<OrderResponseDto[]>([]);
-const loading = ref(false);
-const currentPage = ref(0);
-const pageSize = ref(10);
-const totalPages = ref(0);
-const totalElements = ref(0);
-const isModalOpen = ref(false);
+const loading = ref<boolean>(false);
+const currentPage = ref<number>(0);
+const pageSize = ref<number>(DEFAULT_PAGE_SIZE);
+const totalPages = ref<number>(0);
+const totalElements = ref<number>(0);
+const isModalOpen = ref<boolean>(false);
 const selectedOrderId = ref<number | null>(null);
 
-const formatPrice = (priceCents: number, currencyCode: string = 'USD'): string => {
-  const price = priceCents / 100;
-  return new Intl.NumberFormat('en-US', {
+const formatPrice = (priceCents: number, currencyCode: string = DEFAULT_CURRENCY_CODE): string => {
+  const price = priceCents / CENTS_TO_CURRENCY_DIVISOR;
+  return new Intl.NumberFormat(LOCALE_EN_US, {
     style: 'currency',
     currency: currencyCode,
   }).format(price);
@@ -170,7 +182,7 @@ const formatPrice = (priceCents: number, currencyCode: string = 'USD'): string =
 
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat(LOCALE_EN_US, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -210,39 +222,35 @@ const fetchOrders = async () => {
         totalElements.value = paginationData.totalElements;
         currentPage.value = paginationData.page;
       } else if (Array.isArray(response.data)) {
-        // If response is array directly
         orders.value = response.data;
         totalPages.value = 1;
         totalElements.value = response.data.length;
       } else {
-        // Single order object
         orders.value = [response.data as OrderResponseDto];
         totalPages.value = 1;
         totalElements.value = 1;
       }
     }
-  } catch (error: any) {
-    console.error('Failed to fetch orders:', error);
+  } catch (error: unknown) {
     toast.error(getErrorMessage(error, DEFAULT_ERROR_MESSAGES.ORDER_LOAD));
   } finally {
     loading.value = false;
   }
 };
 
-const goToPage = (page: number) => {
+const goToPage = (page: number): void => {
   currentPage.value = page;
   fetchOrders();
 };
 
-const viewOrderDetails = (orderId: number) => {
+const viewOrderDetails = (orderId: number): void => {
   selectedOrderId.value = orderId;
   isModalOpen.value = true;
 };
 
 onMounted(() => {
-  // Redirect to login if not authenticated
   if (!authStore.isAuthenticated) {
-    router.push({ name: 'Login', query: { redirect: '/orders' } });
+    router.push({ name: 'Login', query: { redirect: ROUTES.ORDERS } });
     return;
   }
 

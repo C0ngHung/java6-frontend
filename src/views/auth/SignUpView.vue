@@ -267,8 +267,9 @@ const handleSignUp = async () => {
         router.push({ name: 'Login', query: { registered: 'true' } });
       }, 2000);
     }
-  } catch (err: any) {
-    error.value = err.response?.data?.message || err.response?.data?.errors?.[0] || 'Registration failed. Please try again.';
+  } catch (err: unknown) {
+    const axiosError = err as { response?: { data?: { message?: string; errors?: string[] } } };
+    error.value = axiosError.response?.data?.message || axiosError.response?.data?.errors?.[0] || 'Registration failed. Please try again.';
   } finally {
     loading.value = false;
   }

@@ -116,8 +116,9 @@ const handleSubmit = async () => {
     setTimeout(() => {
       router.push({ name: 'Login' });
     }, 2000);
-  } catch (err: any) {
-    error.value = err.response?.data?.message || 'Failed to reset password. Please try again.';
+  } catch (err: unknown) {
+    const axiosError = err as { response?: { data?: { message?: string } } };
+    error.value = axiosError.response?.data?.message || 'Failed to reset password. Please try again.';
   } finally {
     loading.value = false;
   }

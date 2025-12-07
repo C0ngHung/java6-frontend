@@ -1,96 +1,102 @@
 import { ERROR_MESSAGES, HTTP_STATUS_MESSAGES, DEFAULT_ERROR_MESSAGES } from './errorMessages';
 import type { AxiosError } from 'axios';
 
-// Re-export for convenience
 export { DEFAULT_ERROR_MESSAGES, ERROR_MESSAGES, HTTP_STATUS_MESSAGES } from './errorMessages';
 
-/**
- * Get custom error message from backend error response
- * Priority: Error Code > HTTP Status > Default Message
- * 
- * @param error - Axios error or any error object
- * @param defaultMessage - Default message to use if no mapping found
- * @returns Custom error message string
- */
+interface ErrorWithCode {
+  code?: string | number;
+}
+
+interface ApiErrorResponse {
+  error?: {
+    code?: string | number;
+    message?: string;
+  };
+}
+
+const RADIX_DECIMAL = 10;
+
+const parseErrorCode = (code: string | number | undefined): number | null => {
+  if (code === undefined) {
+    return null;
+  }
+
+  const parsed = typeof code === 'string' ? parseInt(code, RADIX_DECIMAL) : code;
+  return !isNaN(parsed) && typeof parsed === 'number' ? parsed : null;
+};
+
+const getErrorCodeFromAxiosError = (error: AxiosError<ApiErrorResponse>): number | null => {
+  const responseData = error.response?.data;
+  const errorCodeStr = responseData?.error?.code;
+  return parseErrorCode(errorCodeStr);
+};
+
+const getErrorCodeFromGenericError = (error: ErrorWithCode): number | null => {
+  return parseErrorCode(error.code);
+};
+
 export function getErrorMessage(
   error: unknown,
   defaultMessage: string = DEFAULT_ERROR_MESSAGES.GENERIC
 ): string {
-  // Handle Axios errors
   if (isAxiosError(error)) {
-    const axiosError = error as AxiosError<any>;
+    const axiosError = error as AxiosError<ApiErrorResponse>;
+    const errorCode = getErrorCodeFromAxiosError(axiosError);
 
-    // Try to get error code from response data
-    const errorCode = axiosError.response?.data?.code;
-    if (errorCode && ERROR_MESSAGES[errorCode]) {
+    if (errorCode !== null && ERROR_MESSAGES[errorCode]) {
       return ERROR_MESSAGES[errorCode];
     }
 
-    // Try to get HTTP status code
     const statusCode = axiosError.response?.status;
     if (statusCode && HTTP_STATUS_MESSAGES[statusCode]) {
       return HTTP_STATUS_MESSAGES[statusCode];
     }
   }
 
-  // Handle generic error objects with code property
   if (error && typeof error === 'object' && 'code' in error) {
-    const code = (error as any).code;
-    if (typeof code === 'number' && ERROR_MESSAGES[code]) {
-      return ERROR_MESSAGES[code];
+    const errorCode = getErrorCodeFromGenericError(error as ErrorWithCode);
+    if (errorCode !== null && ERROR_MESSAGES[errorCode]) {
+      return ERROR_MESSAGES[errorCode];
     }
   }
 
-  // Return default message
   return defaultMessage;
 }
 
-/**
- * Type guard to check if error is AxiosError
- */
-function isAxiosError(error: unknown): error is AxiosError {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'isAxiosError' in error &&
-    (error as any).isAxiosError === true
-  );
+interface AxiosErrorLike {
+  isAxiosError?: boolean;
 }
 
-/**
- * Get error message with fallback to backend message if no custom mapping exists
- * This allows you to use custom messages when available, but fallback to backend messages
- * 
- * @param error - Axios error or any error object
- * @param defaultMessage - Default message to use if no mapping found
- * @param useBackendMessage - Whether to use backend message as fallback (default: false)
- * @returns Error message string
- */
+function isAxiosError(error: unknown): error is AxiosError {
+  if (typeof error !== 'object' || error === null) {
+    return false;
+  }
+
+  const errorLike = error as AxiosErrorLike;
+  return errorLike.isAxiosError === true;
+}
+
 export function getErrorMessageWithFallback(
   error: unknown,
   defaultMessage: string = DEFAULT_ERROR_MESSAGES.GENERIC,
   useBackendMessage: boolean = false
 ): string {
-  // Try to get custom message first
-  const customMessage = getErrorMessage(error, '');
-
-  if (customMessage && customMessage !== defaultMessage) {
-    return customMessage;
-  }
-
-  // If useBackendMessage is true, try to get backend message
   if (useBackendMessage && isAxiosError(error)) {
-    const axiosError = error as AxiosError<any>;
-    const backendMessage =
-      axiosError.response?.data?.message ||
-      axiosError.response?.data?.error?.message;
+    const axiosError = error as AxiosError<ApiErrorResponse>;
+    const responseData = axiosError.response?.data;
+    const backendMessage = responseData?.error?.message;
 
-    if (backendMessage) {
+    if (backendMessage && typeof backendMessage === 'string' && backendMessage.trim()) {
       return backendMessage;
     }
   }
 
-  // Return default message
+  const customMessage = getErrorMessage(error, '');
+
+  if (customMessage && customMessage !== defaultMessage && customMessage.trim()) {
+    return customMessage;
+  }
+
   return defaultMessage;
 }
 

@@ -1,67 +1,83 @@
-import { ref } from 'vue';
+import { ref, type Ref } from 'vue';
 
-interface ToastMessage {
+export type ToastType = 'success' | 'error';
+
+export interface ToastMessage {
   id: number;
   message: string;
-  type: 'success' | 'error';
+  type: ToastType;
   duration: number;
 }
+
+export interface UseToastReturn {
+  toasts: Ref<ToastMessage[]>;
+  success: (message: string, duration?: number) => void;
+  error: (message: string, duration?: number) => void;
+  removeToast: (id: number) => void;
+}
+
+const DEFAULT_TOAST_DURATION = 2000;
 
 const toasts = ref<ToastMessage[]>([]);
 const timeoutIds = new Map<number, ReturnType<typeof setTimeout>>();
 let toastId = 0;
 
-export const useToast = () => {
-  const removeToast = (id: number) => {
-    const index = toasts.value.findIndex((t) => t.id === id);
-    if (index > -1) {
-      // Clear timeout if exists
-      const timeoutId = timeoutIds.get(id);
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-        timeoutIds.delete(id);
-      }
-      toasts.value.splice(index, 1);
-    }
+const removeToast = (id: number): void => {
+  const index = toasts.value.findIndex((t) => t.id === id);
+  if (index === -1) {
+    return;
+  }
+
+  const timeoutId = timeoutIds.get(id);
+  if (timeoutId) {
+    clearTimeout(timeoutId);
+    timeoutIds.delete(id);
+  }
+  toasts.value.splice(index, 1);
+};
+
+const clearAllToasts = (): void => {
+  timeoutIds.forEach((timeoutId) => {
+    clearTimeout(timeoutId);
+  });
+  timeoutIds.clear();
+  toasts.value = [];
+};
+
+const showToast = (
+  message: string,
+  type: ToastType = 'success',
+  duration: number = DEFAULT_TOAST_DURATION
+): void => {
+  if (!message.trim()) {
+    return;
+  }
+
+  clearAllToasts();
+
+  const id = toastId++;
+  const toast: ToastMessage = {
+    id,
+    message: message.trim(),
+    type,
+    duration,
   };
 
-  const clearAllToasts = () => {
-    // Clear all timeouts
-    timeoutIds.forEach((timeoutId) => {
-      clearTimeout(timeoutId);
-    });
-    timeoutIds.clear();
-    // Remove all toasts
-    toasts.value = [];
-  };
+  toasts.value.push(toast);
 
-  const showToast = (message: string, type: 'success' | 'error' = 'success', duration = 2000) => {
-    // Remove all existing toasts immediately when a new toast appears
-    clearAllToasts();
+  const timeoutId = setTimeout(() => {
+    removeToast(id);
+  }, duration);
 
-    const id = toastId++;
-    const toast: ToastMessage = {
-      id,
-      message,
-      type,
-      duration,
-    };
+  timeoutIds.set(id, timeoutId);
+};
 
-    toasts.value.push(toast);
-
-    // Auto remove after duration
-    const timeoutId = setTimeout(() => {
-      removeToast(id);
-    }, duration);
-    
-    timeoutIds.set(id, timeoutId);
-  };
-
-  const success = (message: string, duration = 2000) => {
+export const useToast = (): UseToastReturn => {
+  const success = (message: string, duration: number = DEFAULT_TOAST_DURATION): void => {
     showToast(message, 'success', duration);
   };
 
-  const error = (message: string, duration = 2000) => {
+  const error = (message: string, duration: number = DEFAULT_TOAST_DURATION): void => {
     showToast(message, 'error', duration);
   };
 

@@ -2,11 +2,11 @@
   <Dialog :open="isOpen" @update:open="handleOpenChange">
     <DialogContent class="!w-[95vw] !max-w-[95vw] sm:!max-w-7xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
-        <DialogTitle>Order Details</DialogTitle>
+        <DialogTitle>{{ editable ? 'Edit Order' : 'Order Details' }}</DialogTitle>
       </DialogHeader>
 
       <!-- Loading State -->
-      <div v-if="loading" class="flex items-center justify-center py-12">
+          <div v-if="loading" class="flex items-center justify-center py-12" role="status" aria-live="polite">
         <p class="text-text-secondary-light dark:text-text-secondary-dark">Loading order details...</p>
       </div>
 
@@ -32,8 +32,11 @@
             </div>
             <div class="flex items-center gap-3">
               <span
+                v-if="!isEditing"
                 class="px-3 py-1 rounded-full text-xs font-medium"
                 :class="getStatusClass(order.status)"
+                role="status"
+                :aria-label="`Order status: ${order.status}`"
               >
                 {{ order.status }}
               </span>
@@ -41,6 +44,11 @@
                 {{ formatPrice(order.totalAmountCents, order.currencyCode) }}
               </span>
             </div>
+          </div>
+          <div v-if="editable && !isEditing" class="mt-4">
+            <Button @click="startEditing" variant="outline">
+              Edit Order
+            </Button>
           </div>
         </div>
 
@@ -103,7 +111,116 @@
           </div>
         </div>
 
-        <!-- Order Summary -->
+        <!-- Edit Form -->
+        <form v-if="isEditing" @submit.prevent class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Shipping Information -->
+            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-4">
+              <h4 class="font-semibold text-text-primary mb-3">Shipping Information</h4>
+              <div>
+                <Label for="shipping-name">Name</Label>
+                <Input
+                  id="shipping-name"
+                  v-model="formData.shippingName"
+                  class="mt-1"
+                  aria-label="Shipping name"
+                />
+              </div>
+              <div>
+                <Label for="shipping-phone">Phone</Label>
+                <Input
+                  id="shipping-phone"
+                  v-model="formData.shippingPhone"
+                  type="tel"
+                  class="mt-1"
+                  aria-label="Shipping phone"
+                />
+              </div>
+              <div>
+                <Label for="shipping-address">Address</Label>
+                <Textarea
+                  id="shipping-address"
+                  v-model="formData.shippingAddress"
+                  class="mt-1"
+                  rows="3"
+                  aria-label="Shipping address"
+                />
+              </div>
+            </div>
+
+            <!-- Payment Information -->
+            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-4">
+              <h4 class="font-semibold text-text-primary mb-3">Payment Information</h4>
+              <div>
+                <Label for="order-status">Order Status</Label>
+                <Select v-model="formData.status">
+                  <SelectTrigger id="order-status" class="mt-1" aria-label="Select order status">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem v-for="status in statusOptions" :key="status" :value="status">
+                      {{ status }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label for="payment-method">Payment Method</Label>
+                <Input
+                  id="payment-method"
+                  v-model="formData.paymentMethod"
+                  class="mt-1"
+                  aria-label="Payment method"
+                />
+              </div>
+              <div>
+                <Label for="payment-status">Payment Status</Label>
+                <Select v-model="formData.paymentStatus">
+                  <SelectTrigger id="payment-status" class="mt-1" aria-label="Select payment status">
+                    <SelectValue placeholder="Select payment status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem v-for="status in paymentStatusOptions" :key="status" :value="status">
+                      {{ status }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Total Amount</Label>
+                <p class="mt-1 text-lg font-bold text-primary">
+                  {{ formatPrice(order.totalAmountCents, order.currencyCode) }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <Label for="order-notes">Order Notes</Label>
+            <Textarea
+              id="order-notes"
+              v-model="formData.notes"
+              class="mt-1"
+              rows="3"
+              placeholder="Add notes about this order..."
+              aria-label="Order notes"
+            />
+          </div>
+
+          <!-- Form Actions -->
+          <div class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <Button type="button" variant="outline" @click="cancelEditing" :disabled="saving">
+              Cancel
+            </Button>
+            <Button type="button" @click="handleSave" :disabled="saving">
+              {{ saving ? 'Saving...' : 'Save Changes' }}
+            </Button>
+          </div>
+        </form>
+
+        <!-- View Mode -->
+        <template v-else>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Shipping Information -->
           <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
@@ -154,6 +271,7 @@
             {{ order.notes }}
           </p>
         </div>
+        </template>
       </div>
     </DialogContent>
   </Dialog>
@@ -168,21 +286,39 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { orderApi } from '@/services/order';
 import { productApi } from '@/services/product';
 import { getErrorMessage, DEFAULT_ERROR_MESSAGES } from '@/utils/getErrorMessage';
 import { useToast } from '@/composables/useToast';
-import type { OrderResponseDto, OrderItemResponseDto } from '@/types/order';
+import type { OrderResponseDto, OrderItemResponseDto, OrderUpdateRequestDto } from '@/types/order';
+
+const ORDER_STATUS_OPTIONS = ['PENDING', 'CONFIRMED', 'SHIPPING', 'DELIVERED', 'CANCELLED'] as const;
+const PAYMENT_STATUS_OPTIONS = ['PENDING', 'PAID', 'FAILED', 'REFUNDED'] as const;
 
 interface Props {
   open: boolean;
   orderId: number | null;
+  editable?: boolean;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  editable: false,
+});
 
 const emits = defineEmits<{
   'update:open': [value: boolean];
+  'updated': [];
 }>();
 
 const toast = useToast();
@@ -190,6 +326,22 @@ const isOpen = ref(props.open);
 const loading = ref(false);
 const error = ref<string | null>(null);
 const order = ref<OrderResponseDto | null>(null);
+const isEditing = ref(false);
+const saving = ref(false);
+
+// Form data for editing
+const formData = ref<OrderUpdateRequestDto>({
+  status: '',
+  shippingName: '',
+  shippingPhone: '',
+  shippingAddress: '',
+  paymentMethod: '',
+  paymentStatus: '',
+  notes: '',
+});
+
+const statusOptions = [...ORDER_STATUS_OPTIONS];
+const paymentStatusOptions = [...PAYMENT_STATUS_OPTIONS];
 
 const formatPrice = (priceCents: number, currencyCode: string = 'USD'): string => {
   const price = priceCents / 100;
@@ -236,6 +388,63 @@ const getPaymentStatusClass = (status: string): string => {
   }
 };
 
+const startEditing = () => {
+  if (!order.value) return;
+  
+  formData.value = {
+    status: order.value.status,
+    shippingName: order.value.shippingName,
+    shippingPhone: order.value.shippingPhone,
+    shippingAddress: order.value.shippingAddress,
+    paymentMethod: order.value.paymentMethod || '',
+    paymentStatus: order.value.paymentStatus,
+    notes: order.value.notes || '',
+  };
+  
+  isEditing.value = true;
+};
+
+const cancelEditing = () => {
+  isEditing.value = false;
+  formData.value = {
+    status: '',
+    shippingName: '',
+    shippingPhone: '',
+    shippingAddress: '',
+    paymentMethod: '',
+    paymentStatus: '',
+    notes: '',
+  };
+};
+
+const handleSave = async () => {
+  if (!props.orderId || !order.value) {
+    return;
+  }
+
+  saving.value = true;
+  error.value = null;
+
+  try {
+    const response = await orderApi.update(props.orderId, formData.value);
+    
+    if (response.success && response.data) {
+      order.value = response.data;
+      isEditing.value = false;
+      toast.success('Order updated successfully!');
+      emits('updated');
+    } else {
+      error.value = 'Failed to update order';
+      toast.error(error.value);
+    }
+  } catch (err: any) {
+    error.value = getErrorMessage(err, DEFAULT_ERROR_MESSAGES.ORDER_UPDATE || 'Failed to update order');
+    toast.error(error.value);
+  } finally {
+    saving.value = false;
+  }
+};
+
 const fetchOrderDetails = async () => {
   if (!props.orderId) {
     return;
@@ -258,7 +467,6 @@ const fetchOrderDetails = async () => {
       error.value = getErrorMessage(null, DEFAULT_ERROR_MESSAGES.ORDER_LOAD);
     }
   } catch (err: any) {
-    console.error('Failed to fetch order details:', err);
     error.value = getErrorMessage(err, DEFAULT_ERROR_MESSAGES.ORDER_LOAD);
     toast.error(error.value);
   } finally {
@@ -305,6 +513,16 @@ const handleOpenChange = (value: boolean) => {
     // Reset state when closing
     order.value = null;
     error.value = null;
+    isEditing.value = false;
+    formData.value = {
+      status: '',
+      shippingName: '',
+      shippingPhone: '',
+      shippingAddress: '',
+      paymentMethod: '',
+      paymentStatus: '',
+      notes: '',
+    };
   }
 };
 

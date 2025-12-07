@@ -98,16 +98,16 @@
             v-if="product.stockStatus"
             :class="[
               'absolute top-3 left-3 text-white text-xs font-bold px-2 py-1 rounded-full',
-              product.stockStatus === 'In Stock' ? 'bg-green-500' : '',
-              product.stockStatus === 'Low Stock' ? 'bg-orange-500' : '',
-              product.stockStatus === 'Out of Stock' ? 'bg-red-500' : '',
+              product.stockStatus === STOCK_STATUS_IN_STOCK ? 'bg-green-500' : '',
+              product.stockStatus === STOCK_STATUS_LOW_STOCK ? 'bg-orange-500' : '',
+              product.stockStatus === STOCK_STATUS_OUT_OF_STOCK ? 'bg-red-500' : '',
             ]"
           >
             {{ product.stockStatus }}
           </div>
         </div>
         <div class="p-6">
-          <RouterLink :to="`/products/${product.slug}`" class="block mb-2">
+          <RouterLink :to="`${PRODUCTS_PATH}/${product.slug}`" class="block mb-2">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white hover:text-primary transition-colors">
               {{ product.name }}
             </h3>
@@ -116,16 +116,16 @@
             {{ formatPrice(product.priceCents, product.currencyCode) }}
           </p>
           <button
-            :disabled="product.stockStatus === 'Out of Stock'"
+            :disabled="product.stockStatus === STOCK_STATUS_OUT_OF_STOCK"
             :class="[
               'w-full font-semibold py-3 px-4 rounded-full transition-all duration-300 shadow-md',
-              product.stockStatus === 'Out of Stock'
+              product.stockStatus === STOCK_STATUS_OUT_OF_STOCK
                 ? 'bg-gray-400 dark:bg-gray-600 text-white cursor-not-allowed'
                 : 'bg-primary text-white hover:bg-opacity-90',
             ]"
             @click.stop="handleAddToCart(product)"
           >
-            {{ product.stockStatus === 'Out of Stock' ? 'Out of Stock' : 'Add To Cart' }}
+            {{ product.stockStatus === STOCK_STATUS_OUT_OF_STOCK ? STOCK_STATUS_OUT_OF_STOCK : ADD_TO_CART_TEXT }}
           </button>
         </div>
       </div>
@@ -185,110 +185,126 @@ import type { ProductResponseDto } from '@/types/product';
 import type { CategoryResponseDto } from '@/types/category';
 import type { PaginationResponse } from '@/types/api';
 
-// Router
-const router = useRouter();
+const PRODUCTS_PATH = '/products';
+const DEFAULT_CURRENCY_CODE = 'USD';
+const CENTS_TO_CURRENCY_DIVISOR = 100;
+const LOCALE_EN_US = 'en-US';
+const DEFAULT_PAGE = 1;
+const DEFAULT_PAGE_SIZE = 12;
+const DEFAULT_CATEGORY_PAGE_SIZE = 100;
+const DEFAULT_SORT = 'createdAt,DESC';
+const SORT_SEPARATOR = ',';
+const DEFAULT_PLACEHOLDER_IMAGE = 'https://placehold.co/400';
+const STOCK_STATUS_IN_STOCK = 'In Stock';
+const STOCK_STATUS_LOW_STOCK = 'Low Stock';
+const STOCK_STATUS_OUT_OF_STOCK = 'Out of Stock';
+const ADD_TO_CART_TEXT = 'Add To Cart';
+const MIN_QUANTITY = 0;
+const DEFAULT_QUANTITY = 1;
+const SCROLL_TOP = 0;
+const SCROLL_BEHAVIOR = 'smooth';
 
-// Stores
+const router = useRouter();
 const cartStore = useCartStore();
 
-// State
-const loading = ref(false);
+const loading = ref<boolean>(false);
 const error = ref<string | null>(null);
 const products = ref<ProductResponseDto[]>([]);
 const categories = ref<CategoryResponseDto[]>([]);
 const pagination = ref({
-  page: 1,
-  size: 12,
+  page: DEFAULT_PAGE,
+  size: DEFAULT_PAGE_SIZE,
   totalPages: 0,
   totalElements: 0,
 });
 
-// Filters
 const filters = ref({
-  sort: 'createdAt,DESC',
+  sort: DEFAULT_SORT,
   categoryId: undefined as number | undefined,
   name: undefined as string | undefined,
 });
 
-// Computed
 const stockStatus = computed(() => {
-  return (product: ProductResponseDto) => {
-    const quantity = product.quantity ?? 0;
-    const safetyStock = product.safetyStock ?? 0;
+  return (product: ProductResponseDto): string => {
+    const quantity = product.quantity ?? MIN_QUANTITY;
+    const safetyStock = product.safetyStock ?? MIN_QUANTITY;
 
-    if (quantity === 0) return 'Out of Stock';
-    if (quantity <= safetyStock) return 'Low Stock';
-    return 'In Stock';
+    if (quantity === MIN_QUANTITY) {
+      return STOCK_STATUS_OUT_OF_STOCK;
+    }
+    if (quantity <= safetyStock) {
+      return STOCK_STATUS_LOW_STOCK;
+    }
+    return STOCK_STATUS_IN_STOCK;
   };
 });
 
-// Methods
-const formatPrice = (priceCents: number, currencyCode: string = 'USD'): string => {
-  const price = priceCents / 100;
-  return new Intl.NumberFormat('en-US', {
+const formatPrice = (priceCents: number, currencyCode: string = DEFAULT_CURRENCY_CODE): string => {
+  const price = priceCents / CENTS_TO_CURRENCY_DIVISOR;
+  return new Intl.NumberFormat(LOCALE_EN_US, {
     style: 'currency',
     currency: currencyCode,
   }).format(price);
 };
 
-const handleFilterChange = () => {
+const handleFilterChange = (): void => {
   // Debounce could be added here if needed
 };
 
-const handleApplyFilters = () => {
-  pagination.value.page = 1;
+const handleApplyFilters = (): void => {
+  pagination.value.page = DEFAULT_PAGE;
   fetchProducts();
 };
 
-const resetFilters = () => {
+const resetFilters = (): void => {
   filters.value = {
-    sort: 'createdAt,DESC',
+    sort: DEFAULT_SORT,
     categoryId: undefined,
     name: undefined,
   };
-  pagination.value.page = 1;
+  pagination.value.page = DEFAULT_PAGE;
   fetchProducts();
 };
 
-const handlePageChange = (page: number) => {
+const handlePageChange = (page: number): void => {
   pagination.value.page = page;
   fetchProducts();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top: SCROLL_TOP, behavior: SCROLL_BEHAVIOR });
 };
 
-const handleProductClick = (product: ProductResponseDto) => {
-  router.push(`/products/${product.slug}`);
+const handleProductClick = (product: ProductResponseDto): void => {
+  router.push(`${PRODUCTS_PATH}/${product.slug}`);
 };
 
-const handleAddToCart = async (product: ProductResponseDto) => {
-  if (product.stockStatus === 'Out of Stock') {
+const handleAddToCart = async (product: ProductResponseDto): Promise<void> => {
+  if (product.stockStatus === STOCK_STATUS_OUT_OF_STOCK) {
     return;
   }
   try {
-    await cartStore.addItem(product.id, 1);
-  } catch (error) {
+    await cartStore.addItem(product.id, DEFAULT_QUANTITY);
+  } catch {
     // Error is handled by cart store with toast
   }
 };
 
-const fetchCategories = async () => {
+const fetchCategories = async (): Promise<void> => {
   try {
-    const response = await categoryApi.getAll({ page: 1, size: 100 });
+    const response = await categoryApi.getAll({ page: DEFAULT_PAGE, size: DEFAULT_CATEGORY_PAGE_SIZE });
     if (response.success) {
       categories.value = response.data.content;
     }
-  } catch (err) {
+  } catch {
     // Error handled silently - category filter will just be empty
   }
 };
 
-const fetchProducts = async () => {
+const fetchProducts = async (): Promise<void> => {
   loading.value = true;
   error.value = null;
 
   try {
-    const [sortField, sortDirection] = filters.value.sort.split(',');
-    const params: Record<string, any> = {
+    const [sortField, sortDirection] = filters.value.sort.split(SORT_SEPARATOR);
+    const params: Record<string, string | number> = {
       page: pagination.value.page,
       size: pagination.value.size,
       sort: sortField,
@@ -308,7 +324,7 @@ const fetchProducts = async () => {
     if (response.success) {
       products.value = response.data.content.map((p) => ({
         ...p,
-        image: p.imageUrl || 'https://placehold.co/400',
+        image: p.imageUrl || DEFAULT_PLACEHOLDER_IMAGE,
         stockStatus: stockStatus.value(p),
       }));
       pagination.value = {
@@ -320,18 +336,17 @@ const fetchProducts = async () => {
     } else {
       error.value = 'Failed to load products';
     }
-  } catch (err: any) {
-    error.value = err.response?.data?.message || 'Failed to load products. Please try again.';
+  } catch (err: unknown) {
+    const axiosError = err as { response?: { data?: { message?: string } } };
+    error.value = axiosError.response?.data?.message || 'Failed to load products. Please try again.';
   } finally {
     loading.value = false;
   }
 };
 
-// Lifecycle
 onMounted(() => {
   fetchCategories();
   fetchProducts();
-  // Initialize cart if not already loaded
   if (cartStore.cartCount === 0) {
     cartStore.initCart();
   }

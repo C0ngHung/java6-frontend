@@ -1,22 +1,25 @@
-/**
- * Sidebar state storage utilities
- * Handles persisting sidebar state to localStorage
- */
+export type SidebarState = 'expanded' | 'collapsed';
 
 const STORAGE_KEY = 'sidebar_state';
+const DEFAULT_SIDEBAR_STATE: SidebarState = 'expanded';
 
-export const getSidebarState = (): 'expanded' | 'collapsed' => {
-  if (typeof window === 'undefined') return 'expanded';
-
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored === 'collapsed' || stored === 'expanded') {
-    return stored;
-  }
-  return 'expanded';
+const isValidSidebarState = (value: string | null): value is SidebarState => {
+  return value === 'expanded' || value === 'collapsed';
 };
 
-export const setSidebarState = (state: 'expanded' | 'collapsed'): void => {
-  if (typeof window === 'undefined') return;
+export const getSidebarState = (): SidebarState => {
+  if (typeof window === 'undefined') {
+    return DEFAULT_SIDEBAR_STATE;
+  }
+
+  const stored = localStorage.getItem(STORAGE_KEY);
+  return isValidSidebarState(stored) ? stored : DEFAULT_SIDEBAR_STATE;
+};
+
+export const setSidebarState = (state: SidebarState): void => {
+  if (typeof window === 'undefined') {
+    return;
+  }
 
   localStorage.setItem(STORAGE_KEY, state);
 };

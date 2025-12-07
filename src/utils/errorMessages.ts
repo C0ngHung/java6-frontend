@@ -1,8 +1,3 @@
-/**
- * Custom error messages mapping
- * Maps backend error codes to user-friendly frontend messages
- */
-
 export const ERROR_MESSAGES: Record<number, string> = {
   // Auth errors (1000-1999)
   1001: 'Bạn chưa đăng nhập. Vui lòng đăng nhập để tiếp tục.',
@@ -44,17 +39,23 @@ export const ERROR_MESSAGES: Record<number, string> = {
   4090: 'Dữ liệu đã tồn tại hoặc xung đột. Vui lòng kiểm tra lại.',
 
   // Order errors (5000-5999)
+  // Note: Backend OrderErrorCode uses 5001-5006
   5001: 'Không tìm thấy đơn hàng.',
   5002: 'Không tìm thấy sản phẩm trong đơn hàng.',
   5003: 'Dữ liệu đơn hàng không hợp lệ. Vui lòng kiểm tra lại.',
   5004: 'Giỏ hàng trống, không thể tạo đơn hàng.',
   5005: 'Sản phẩm không đủ số lượng trong kho.',
   5006: 'Tạo đơn hàng thất bại. Vui lòng thử lại sau.',
+
+  // Category errors (6001-6006)
+  6001: 'Không tìm thấy danh mục.',
+  6002: 'Danh mục đã tồn tại.',
+  6003: 'Tên danh mục đã tồn tại.',
+  6004: 'Không thể xóa danh mục có danh mục con.',
+  6005: 'Không thể xóa danh mục có sản phẩm.',
+  6006: 'Dữ liệu danh mục không hợp lệ.',
 };
 
-/**
- * HTTP status code to custom message mapping
- */
 export const HTTP_STATUS_MESSAGES: Record<number, string> = {
   400: 'Yêu cầu không hợp lệ. Vui lòng kiểm tra lại thông tin.',
   401: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
@@ -67,9 +68,6 @@ export const HTTP_STATUS_MESSAGES: Record<number, string> = {
   503: 'Dịch vụ tạm thời không khả dụng. Vui lòng thử lại sau.',
 };
 
-/**
- * Default error messages for different contexts
- */
 export const DEFAULT_ERROR_MESSAGES = {
   PROFILE_UPDATE: 'Cập nhật thông tin thất bại. Vui lòng thử lại.',
   PROFILE_LOAD: 'Không thể tải thông tin người dùng. Vui lòng thử lại.',
@@ -87,6 +85,17 @@ export const DEFAULT_ERROR_MESSAGES = {
   PRODUCT_LOAD: 'Không thể tải thông tin sản phẩm. Vui lòng thử lại.',
   PRODUCT_DELETE: 'Không thể xóa sản phẩm. Vui lòng thử lại.',
   PRODUCT_UPLOAD: 'Không thể tải lên hình ảnh. Vui lòng thử lại.',
+  ORDER_UPDATE: 'Cập nhật đơn hàng thất bại. Vui lòng thử lại.',
+  ORDER_DELETE: 'Xóa đơn hàng thất bại. Vui lòng thử lại.',
+  CATEGORY_SAVE: 'Không thể lưu danh mục. Vui lòng thử lại.',
+  CATEGORY_LOAD: 'Không thể tải thông tin danh mục. Vui lòng thử lại.',
+  CATEGORY_DELETE: 'Không thể xóa danh mục. Vui lòng thử lại.',
+  USER_SAVE: 'Không thể lưu người dùng. Vui lòng thử lại.',
+  USER_LOAD: 'Không thể tải thông tin người dùng. Vui lòng thử lại.',
+  USER_DELETE: 'Không thể xóa người dùng. Vui lòng thử lại.',
+  ROLE_SAVE: 'Không thể lưu vai trò. Vui lòng thử lại.',
+  ROLE_LOAD: 'Không thể tải thông tin vai trò. Vui lòng thử lại.',
+  ROLE_DELETE: 'Không thể xóa vai trò. Vui lòng thử lại.',
   GENERIC: 'Đã xảy ra lỗi. Vui lòng thử lại sau.',
 };
 

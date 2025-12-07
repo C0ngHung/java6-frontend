@@ -24,10 +24,10 @@
           <!-- Desktop Navigation -->
           <nav class="hidden lg:flex items-center space-x-8 xl:space-x-12">
             <RouterLink to="/" class="text-black dark:text-white hover:underline text-sm xl:text-base">Home</RouterLink>
-            <a href="#contact" class="text-black dark:text-white hover:underline text-sm xl:text-base">Contact</a>
-            <a href="#about" class="text-black dark:text-white hover:underline text-sm xl:text-base">About</a>
+            <RouterLink to="/contact" class="text-black dark:text-white hover:underline text-sm xl:text-base">Contact</RouterLink>
+            <RouterLink to="/about" class="text-black dark:text-white hover:underline text-sm xl:text-base">About</RouterLink>
             <RouterLink v-if="!authStore.isAuthenticated" to="/register" class="text-black dark:text-white hover:underline text-sm xl:text-base">Sign Up</RouterLink>
-            <RouterLink v-else-if="authStore.isAdmin" to="/dashboard" class="text-black dark:text-white hover:underline text-sm xl:text-base">Dashboard</RouterLink>
+            <RouterLink v-else-if="authStore.isAdmin" to="/admin/dashboard" class="text-black dark:text-white hover:underline text-sm xl:text-base">Dashboard</RouterLink>
           </nav>
 
           <!-- Right Side Actions -->
@@ -67,8 +67,8 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-black text-white pt-16 pb-6">
-      <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <footer class="w-full bg-black text-white pt-16 pb-6">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-16">
           <!-- Subscribe Section -->
           <div class="space-y-4">
@@ -96,9 +96,9 @@
           <!-- Support Section -->
           <div class="space-y-4">
             <h3 class="text-xl font-medium">Support</h3>
-            <p class="text-gray-300">111 Bijoy sarani, Dhaka,<br />DH 1515, Bangladesh.</p>
-            <p class="text-gray-300">chfashion@gmail.com</p>
-            <p class="text-gray-300">+88015-88888-9999</p>
+            <p class="text-gray-300">108/4 Nguyễn Văn Khối, Hạnh Thông Tây,<br />HCM 70000, Vietnam</p>
+            <p class="text-gray-300">C0ngHungDCH@gmail.com</p>
+            <p class="text-gray-300">+84-9999-9999</p>
           </div>
 
           <!-- Account Section -->
@@ -106,13 +106,13 @@
             <h3 class="text-xl font-medium">Account</h3>
             <ul class="space-y-3 text-gray-300">
               <li>
-                <RouterLink to="/dashboard" class="hover:text-white">My Account</RouterLink>
+                <RouterLink to="/account" class="hover:text-white">My Account</RouterLink>
               </li>
               <li v-if="!authStore.isAuthenticated">
                 <RouterLink to="/login" class="hover:text-white">Login / Register</RouterLink>
               </li>
               <li v-else-if="authStore.isAdmin">
-                <RouterLink to="/dashboard" class="hover:text-white">Dashboard</RouterLink>
+                <RouterLink to="/admin/dashboard" class="hover:text-white">Dashboard</RouterLink>
               </li>
               <li>
                 <RouterLink to="/cart" class="hover:text-white">Cart</RouterLink>
@@ -129,12 +129,12 @@
           <!-- Quick Link Section -->
           <div class="space-y-4">
             <h3 class="text-xl font-medium">Quick Link</h3>
-            <ul class="space-y-3 text-gray-300">
-              <li><a href="#" class="hover:text-white">Privacy Policy</a></li>
-              <li><a href="#" class="hover:text-white">Terms Of Use</a></li>
-              <li><a href="#" class="hover:text-white">FAQ</a></li>
-              <li><a href="#" class="hover:text-white">Contact</a></li>
-            </ul>
+              <ul class="space-y-3 text-gray-300">
+                <li><a href="#" class="hover:text-white">Privacy Policy</a></li>
+                <li><a href="#" class="hover:text-white">Terms Of Use</a></li>
+                <li><a href="#" class="hover:text-white">FAQ</a></li>
+                <li><RouterLink to="/contact" class="hover:text-white">Contact</RouterLink></li>
+              </ul>
           </div>
 
           <!-- Download App Section -->

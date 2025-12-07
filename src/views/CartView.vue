@@ -18,7 +18,7 @@
       <span class="material-symbols-outlined text-6xl text-gray-300 dark:text-gray-600 mb-4">shopping_cart</span>
       <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Your cart is empty</h2>
       <p class="text-gray-500 dark:text-gray-400 mb-6">Add some products to get started!</p>
-      <RouterLink to="/products">
+      <RouterLink :to="PRODUCTS_PATH">
         <Button>Continue Shopping</Button>
       </RouterLink>
     </div>
@@ -37,7 +37,7 @@
               <!-- Product Image -->
               <div class="flex-shrink-0">
                 <img
-                  :src="item.productImageUrl || 'https://placehold.co/150'"
+                  :src="item.productImageUrl || DEFAULT_PLACEHOLDER_IMAGE"
                   :alt="item.productName"
                   class="w-24 h-24 object-cover rounded-lg"
                 />
@@ -60,10 +60,11 @@
                     variant="outline"
                     size="icon"
                     class="h-8 w-8"
-                    :disabled="item.quantity <= 1"
+                    :disabled="item.quantity <= MIN_QUANTITY"
                     @click="handleDecreaseQuantity(item.id, item.quantity)"
+                    aria-label="Decrease quantity"
                   >
-                    <span class="material-symbols-outlined text-base">remove</span>
+                    <span class="material-symbols-outlined text-base" aria-hidden="true">remove</span>
                   </Button>
                   <span class="text-lg font-medium text-gray-900 dark:text-white w-8 text-center">
                     {{ item.quantity }}
@@ -73,8 +74,9 @@
                     size="icon"
                     class="h-8 w-8"
                     @click="handleIncreaseQuantity(item.id, item.quantity)"
+                    aria-label="Increase quantity"
                   >
-                    <span class="material-symbols-outlined text-base">add</span>
+                    <span class="material-symbols-outlined text-base" aria-hidden="true">add</span>
                   </Button>
                 </div>
 
@@ -88,8 +90,9 @@
                     size="icon"
                     class="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                     @click="handleRemoveItem(item.id)"
+                    aria-label="Remove item from cart"
                   >
-                    <span class="material-symbols-outlined text-xl">delete</span>
+                    <span class="material-symbols-outlined text-xl" aria-hidden="true">delete</span>
                   </Button>
                 </div>
               </div>
@@ -99,9 +102,9 @@
 
         <!-- Continue Shopping -->
         <div class="mt-6">
-          <RouterLink to="/products">
+          <RouterLink :to="PRODUCTS_PATH">
             <Button variant="outline">
-              <span class="material-symbols-outlined mr-2">arrow_back</span>
+              <span class="material-symbols-outlined mr-2" aria-hidden="true">arrow_back</span>
               Continue Shopping
             </Button>
           </RouterLink>
@@ -153,7 +156,7 @@
           <!-- Guest User Notice -->
           <div v-if="!authStore.isAuthenticated" class="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
             <p class="text-sm text-yellow-800 dark:text-yellow-200">
-              <span class="material-symbols-outlined text-base align-middle mr-1">info</span>
+              <span class="material-symbols-outlined text-base align-middle mr-1" aria-hidden="true">info</span>
               You'll need to login to complete your purchase
             </p>
           </div>
@@ -195,64 +198,73 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+const DEFAULT_PLACEHOLDER_IMAGE = 'https://placehold.co/150';
+const MIN_QUANTITY = 1;
+const CENTS_TO_CURRENCY_DIVISOR = 100;
+const LOCALE_VI_VN = 'vi-VN';
+const CURRENCY_VND = 'VND';
+const CHECKOUT_PATH = '/checkout';
+const PRODUCTS_PATH = '/products';
 
 const router = useRouter();
 const cartStore = useCartStore();
 const authStore = useAuthStore();
 
-const showClearCartDialog = ref(false);
+const showClearCartDialog = ref<boolean>(false);
 
 const formatPrice = (priceCents: number): string => {
-  const price = priceCents / 100;
-  return new Intl.NumberFormat('vi-VN', {
+  const price = priceCents / CENTS_TO_CURRENCY_DIVISOR;
+  return new Intl.NumberFormat(LOCALE_VI_VN, {
     style: 'currency',
-    currency: 'VND',
+    currency: CURRENCY_VND,
   }).format(price);
 };
 
-const handleIncreaseQuantity = async (itemId: number, currentQuantity: number) => {
+const handleIncreaseQuantity = async (itemId: number, currentQuantity: number): Promise<void> => {
   try {
     await cartStore.updateItem(itemId, currentQuantity + 1);
-  } catch (error) {
+  } catch {
     // Error handled by store
   }
 };
 
-const handleDecreaseQuantity = async (itemId: number, currentQuantity: number) => {
-  if (currentQuantity <= 1) return;
+const handleDecreaseQuantity = async (itemId: number, currentQuantity: number): Promise<void> => {
+  if (currentQuantity <= MIN_QUANTITY) {
+    return;
+  }
   try {
     await cartStore.updateItem(itemId, currentQuantity - 1);
-  } catch (error) {
+  } catch {
     // Error handled by store
   }
 };
 
-const handleRemoveItem = async (itemId: number) => {
+const handleRemoveItem = async (itemId: number): Promise<void> => {
   try {
     await cartStore.removeItem(itemId);
-  } catch (error) {
+  } catch {
     // Error handled by store
   }
 };
 
-const handleClearCart = () => {
+const handleClearCart = (): void => {
   showClearCartDialog.value = true;
 };
 
-const confirmClearCart = async () => {
+const confirmClearCart = async (): Promise<void> => {
   try {
     await cartStore.clearCart();
     showClearCartDialog.value = false;
-  } catch (error) {
+  } catch {
     // Error handled by store
   }
 };
 
-const handleCheckout = () => {
+const handleCheckout = (): void => {
   if (!authStore.isAuthenticated) {
-    router.push({ name: 'Login', query: { redirect: '/checkout' } });
+    router.push({ name: 'Login', query: { redirect: CHECKOUT_PATH } });
   } else {
-    router.push('/checkout');
+    router.push(CHECKOUT_PATH);
   }
 };
 

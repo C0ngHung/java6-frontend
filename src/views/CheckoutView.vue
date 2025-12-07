@@ -4,7 +4,7 @@
     <div class="text-sm text-gray-500 dark:text-gray-400 mb-12">
       <RouterLink to="/" class="hover:text-primary">Account</RouterLink>
       <span class="mx-2">/</span>
-      <RouterLink to="/dashboard" class="hover:text-primary">My Account</RouterLink>
+      <RouterLink to="/account" class="hover:text-primary">My Account</RouterLink>
       <span class="mx-2">/</span>
       <RouterLink to="/products" class="hover:text-primary">Product</RouterLink>
       <span class="mx-2">/</span>
@@ -16,7 +16,7 @@
     <!-- Empty Cart State -->
     <div v-if="!cartStore.cart || cartStore.cart.items.length === 0" class="text-center py-12">
       <p class="text-gray-500 dark:text-gray-400 mb-6">Your cart is empty</p>
-      <RouterLink to="/products">
+      <RouterLink :to="PRODUCTS_PATH">
         <Button>Continue Shopping</Button>
       </RouterLink>
     </div>
@@ -27,20 +27,20 @@
       <div>
         <h1 class="text-4xl font-medium mb-8">Billing Details</h1>
         <form @submit.prevent="handleSubmit" class="space-y-6">
-          <!-- First Name -->
+          <!-- Full Name -->
           <div>
-            <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2" for="first-name">
-              First Name<span class="text-red-500">*</span>
+            <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2" for="full-name">
+              Full Name<span class="text-red-500">*</span>
             </label>
             <Input
-              id="first-name"
-              v-model="form.firstName"
+              id="full-name"
+              v-model="form.fullName"
               type="text"
               required
-              :class="errors.firstName ? 'border-red-500' : ''"
-              placeholder="Enter your first name"
+              :class="errors.fullName ? 'border-red-500' : ''"
+              placeholder="Enter your full name"
             />
-            <p v-if="errors.firstName" class="text-red-500 text-xs mt-1">{{ errors.firstName }}</p>
+            <p v-if="errors.fullName" class="text-red-500 text-xs mt-1">{{ errors.fullName }}</p>
           </div>
 
           <!-- Company Name -->
@@ -151,7 +151,7 @@
             <div class="flex items-center space-x-4">
               <img
                 :alt="item.productName"
-                :src="item.productImageUrl || 'https://placehold.co/56'"
+                :src="item.productImageUrl || DEFAULT_PLACEHOLDER_IMAGE"
                 class="w-14 h-14 object-contain rounded"
               />
               <span class="text-sm font-medium">{{ item.productName }}</span>
@@ -252,8 +252,12 @@
             :disabled="placingOrder || !isFormValid"
             @click="handlePlaceOrder"
           >
-            <span v-if="placingOrder" class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-r-transparent mr-2"></span>
-            {{ placingOrder ? 'Placing Order...' : 'Place Order' }}
+            <span
+              v-if="placingOrder"
+              class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-r-transparent mr-2"
+              aria-hidden="true"
+            ></span>
+            {{ placingOrder ? PLACING_ORDER_TEXT : PLACE_ORDER_TEXT }}
           </Button>
         </div>
       </div>
@@ -274,6 +278,20 @@ import Button from '@/components/ui/button/Button.vue';
 import Input from '@/components/ui/input/Input.vue';
 import Checkbox from '@/components/ui/checkbox/Checkbox.vue';
 
+const DEFAULT_PLACEHOLDER_IMAGE = 'https://placehold.co/56';
+const PRODUCTS_PATH = '/products';
+const CART_PATH = '/cart';
+const HOME_PATH = '/';
+const BILLING_INFO_STORAGE_KEY = 'billingInfo';
+const DEFAULT_PAYMENT_METHOD = 'cash-on-delivery';
+const DEFAULT_CURRENCY_CODE = 'USD';
+const CENTS_TO_CURRENCY_DIVISOR = 100;
+const LOCALE_EN_US = 'en-US';
+const PLACING_ORDER_TEXT = 'Placing Order...';
+const PLACE_ORDER_TEXT = 'Place Order';
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const ADDRESS_SEPARATOR = ', ';
+
 const router = useRouter();
 const cartStore = useCartStore();
 const authStore = useAuthStore();
@@ -281,7 +299,7 @@ const toast = useToast();
 
 // Form state
 const form = ref({
-  firstName: '',
+  fullName: '',
   companyName: '',
   streetAddress: '',
   apartment: '',
@@ -299,7 +317,7 @@ const placingOrder = ref(false);
 // Computed
 const isFormValid = computed(() => {
   return (
-    form.value.firstName.trim() !== '' &&
+    form.value.fullName.trim() !== '' &&
     form.value.streetAddress.trim() !== '' &&
     form.value.townCity.trim() !== '' &&
     form.value.phoneNumber.trim() !== '' &&
@@ -309,24 +327,23 @@ const isFormValid = computed(() => {
 });
 
 // Methods
-const formatPrice = (priceCents: number, currencyCode: string = 'USD'): string => {
-  const price = priceCents / 100;
-  return new Intl.NumberFormat('en-US', {
+const formatPrice = (priceCents: number, currencyCode: string = DEFAULT_CURRENCY_CODE): string => {
+  const price = priceCents / CENTS_TO_CURRENCY_DIVISOR;
+  return new Intl.NumberFormat(LOCALE_EN_US, {
     style: 'currency',
     currency: currencyCode,
   }).format(price);
 };
 
 const validateEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  return EMAIL_PATTERN.test(email);
 };
 
 const validateForm = (): boolean => {
   errors.value = {};
 
-  if (!form.value.firstName.trim()) {
-    errors.value.firstName = 'First name is required';
+  if (!form.value.fullName.trim()) {
+    errors.value.fullName = 'Full name is required';
   }
 
   if (!form.value.streetAddress.trim()) {
@@ -360,10 +377,16 @@ const handleApplyCoupon = () => {
 
 const buildShippingAddress = (): string => {
   const parts: string[] = [];
-  if (form.value.streetAddress) parts.push(form.value.streetAddress);
-  if (form.value.apartment) parts.push(form.value.apartment);
-  if (form.value.townCity) parts.push(form.value.townCity);
-  return parts.join(', ');
+  if (form.value.streetAddress) {
+    parts.push(form.value.streetAddress);
+  }
+  if (form.value.apartment) {
+    parts.push(form.value.apartment);
+  }
+  if (form.value.townCity) {
+    parts.push(form.value.townCity);
+  }
+  return parts.join(ADDRESS_SEPARATOR);
 };
 
 const handlePlaceOrder = async () => {
@@ -374,7 +397,7 @@ const handlePlaceOrder = async () => {
 
   if (!cartStore.cart || cartStore.cart.items.length === 0) {
     toast.error('Your cart is empty');
-    router.push('/cart');
+    router.push(CART_PATH);
     return;
   }
 
@@ -388,7 +411,7 @@ const handlePlaceOrder = async () => {
   try {
     const orderData: OrderRequestDto = {
       cartId: cartStore.cart.id,
-      shippingName: form.value.firstName,
+      shippingName: form.value.fullName,
       shippingPhone: form.value.phoneNumber,
       shippingAddress: buildShippingAddress(),
       paymentMethod: paymentMethod.value,
@@ -403,18 +426,15 @@ const handlePlaceOrder = async () => {
     // Clear cart after successful order
     await cartStore.clearCart();
     
-    // Save billing info if checkbox is checked
     if (form.value.saveInfo) {
-      localStorage.setItem('billingInfo', JSON.stringify(form.value));
+      localStorage.setItem(BILLING_INFO_STORAGE_KEY, JSON.stringify(form.value));
     }
 
-    // Redirect to order confirmation page (or home)
-    router.push('/');
+    router.push(HOME_PATH);
     } else {
       toast.error(getErrorMessage(null, DEFAULT_ERROR_MESSAGES.ORDER_CREATE));
     }
-  } catch (error: any) {
-    console.error('Order creation error:', error);
+  } catch (error: unknown) {
     const errorMessage = getErrorMessage(error, DEFAULT_ERROR_MESSAGES.ORDER_CREATE);
     toast.error(errorMessage);
   } finally {
@@ -426,23 +446,20 @@ const handleSubmit = () => {
   handlePlaceOrder();
 };
 
-// Load saved billing info if available
-const loadSavedBillingInfo = () => {
-  const savedInfo = localStorage.getItem('billingInfo');
+const loadSavedBillingInfo = (): void => {
+  const savedInfo = localStorage.getItem(BILLING_INFO_STORAGE_KEY);
   if (savedInfo) {
     try {
       const parsed = JSON.parse(savedInfo);
       form.value = { ...form.value, ...parsed };
-    } catch (error) {
+    } catch {
       // Silently fail - form will use default values
     }
   }
 
-  // Pre-fill with user info if authenticated
   if (authStore.user) {
     if (authStore.user.fullName) {
-      const nameParts = authStore.user.fullName.split(' ');
-      form.value.firstName = nameParts[0] || '';
+      form.value.fullName = authStore.user.fullName;
     }
     if (authStore.user.email) {
       form.value.emailAddress = authStore.user.email;
@@ -453,18 +470,13 @@ const loadSavedBillingInfo = () => {
   }
 };
 
-// Lifecycle
 onMounted(async () => {
-  // Redirect to cart if cart is empty
   if (!cartStore.cart || cartStore.cart.items.length === 0) {
-    router.push('/cart');
+    router.push(CART_PATH);
     return;
   }
 
-  // Ensure cart is loaded
   await cartStore.initCart();
-
-  // Load saved billing info
   loadSavedBillingInfo();
 });
 </script>

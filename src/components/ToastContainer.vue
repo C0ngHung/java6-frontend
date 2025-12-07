@@ -1,6 +1,12 @@
 <template>
   <Teleport to="body">
-    <div class="fixed top-4 right-4 z-50 flex flex-col gap-2">
+    <div
+      class="fixed top-4 right-4 z-50 flex flex-col gap-2"
+      role="region"
+      aria-live="polite"
+      aria-atomic="false"
+      aria-label="Notifications"
+    >
       <TransitionGroup name="toast" tag="div">
         <div
           v-for="toast in toasts"
@@ -9,8 +15,10 @@
             'flex items-center gap-3 rounded-lg px-4 py-3 shadow-lg min-w-[300px] max-w-[500px]',
             toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white',
           ]"
+          :role="toast.type === 'success' ? 'status' : 'alert'"
+          :aria-live="toast.type === 'success' ? 'polite' : 'assertive'"
         >
-          <span class="material-symbols-outlined">
+          <span class="material-symbols-outlined" :aria-hidden="true">
             {{ toast.type === 'success' ? 'check_circle' : 'error' }}
           </span>
           <p class="flex-1 text-sm font-medium">{{ toast.message }}</p>
@@ -18,8 +26,9 @@
             @click="removeToast(toast.id)"
             class="flex h-6 w-6 items-center justify-center rounded-full hover:bg-white/20 transition-colors"
             type="button"
+            :aria-label="`Close ${toast.type} notification`"
           >
-            <span class="material-symbols-outlined text-sm">close</span>
+            <span class="material-symbols-outlined text-sm" aria-hidden="true">close</span>
           </button>
         </div>
       </TransitionGroup>

@@ -80,8 +80,9 @@ const handleSubmit = async () => {
     
     success.value = 'Password reset link has been sent to your email address.';
     form.value.email = '';
-  } catch (err: any) {
-    error.value = err.response?.data?.message || 'Failed to send reset link. Please try again.';
+  } catch (err: unknown) {
+    const axiosError = err as { response?: { data?: { message?: string } } };
+    error.value = axiosError.response?.data?.message || 'Failed to send reset link. Please try again.';
   } finally {
     loading.value = false;
   }

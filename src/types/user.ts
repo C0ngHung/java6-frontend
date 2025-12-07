@@ -3,7 +3,7 @@ export interface User {
   username: string;
   email: string;
   fullName: string;
-  phone: string;
+  phone?: string;
   isActive: boolean;
   role?: string;
   authorities?: string[];
@@ -23,7 +23,7 @@ export interface LoginResponse {
   username: string;
   email: string;
   fullName: string;
-  phone: string;
+  phone?: string;
   roles: string[];
   permissions: string[];
 }
@@ -84,5 +84,39 @@ export interface UserResponse {
   username: string;
   email: string;
   fullName: string;
-  phone: string;
+  phone?: string;
+}
+
+export interface UserResponseDto {
+  id: number;
+  username: string;
+  email: string;
+  fullName: string;
+  phone?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserCreateDto {
+  username: string;
+  password: string;
+  email: string;
+  fullName: string;
+  phone?: string;
+}
+
+export interface UserUpdateDto {
+  fullName?: string;
+  password?: string;
+  email?: string;
+  phone?: string;
+}
+
+export interface UserRoleResponseDto {
+  userId: number;
+  username: string;
+  roleId: number;
+  roleCode: string;
+  roleName: string;
 }

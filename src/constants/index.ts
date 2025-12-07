@@ -1,4 +1,3 @@
-// API Endpoints
 export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: '/auth/login',
@@ -19,33 +18,49 @@ export const API_ENDPOINTS = {
   },
   ORDER: {
     BASE: '/orders',
+    ADMIN: '/orders/admin',
+    UPDATE: '/orders/{orderId}',
+    DELETE: '/orders/{orderId}',
   },
   USER: {
     BASE: '/users',
+    SEARCH: '/users/search',
+    ACTIVATE: '/users/{id}/activate',
+    DEACTIVATE: '/users/{id}/deactivate',
+    ASSIGN_ROLE: '/users/{id}/roles/{roleId}',
+    REMOVE_ROLE: '/users/{id}/roles/{roleId}',
+    GET_ROLES: '/users/{id}/roles',
+  },
+  ROLE: {
+    BASE: '/roles',
+    SEARCH: '/roles',
   },
 } as const;
 
-// Routes
 export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
   REGISTER: '/register',
-  DASHBOARD: '/dashboard',
+  ACCOUNT: '/account',
+  ORDERS: '/orders',
   ADMIN_DASHBOARD: '/admin/dashboard',
   FORGOT_PASSWORD: '/forgot-password',
   PASSWORD_RESET: '/password-reset',
   OTP_VERIFICATION: '/otp-verification',
 } as const;
 
-// Local Storage Keys
 export const STORAGE_KEYS = {
   ACCESS_TOKEN: 'accessToken',
   REFRESH_TOKEN: 'refreshToken',
 } as const;
 
-// OTP Configuration
 export const OTP_CONFIG = {
   LENGTH: 6,
   EXPIRATION_MINUTES: 15,
 } as const;
+
+export type ApiEndpoints = typeof API_ENDPOINTS;
+export type Routes = typeof ROUTES;
+export type StorageKeys = typeof STORAGE_KEYS;
+export type OtpConfig = typeof OTP_CONFIG;
 

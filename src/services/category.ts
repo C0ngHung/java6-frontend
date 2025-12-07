@@ -3,8 +3,14 @@ import { API_ENDPOINTS } from '@/constants';
 import type { ApiResponse, PaginationRequest, PaginationResponse } from '@/types/api';
 import type { CategoryCreateDto, CategoryResponseDto, CategoryUpdateDto } from '@/types/category';
 
+interface CategorySearchParams extends PaginationRequest {
+  sort?: string;
+  direction?: 'ASC' | 'DESC';
+  search?: string;
+}
+
 export const categoryApi = {
-  getAll: async (params: PaginationRequest & { sort?: string; direction?: 'ASC' | 'DESC'; search?: string }): Promise<ApiResponse<PaginationResponse<CategoryResponseDto>>> => {
+  getAll: async (params: CategorySearchParams): Promise<ApiResponse<PaginationResponse<CategoryResponseDto>>> => {
     const response = await axiosInstance.get<ApiResponse<PaginationResponse<CategoryResponseDto>>>(
       API_ENDPOINTS.CATEGORY.BASE,
       { params }

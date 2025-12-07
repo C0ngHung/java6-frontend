@@ -1,6 +1,12 @@
-import { createRouter, createWebHistory } from 'vue-router';
-import type { RouteRecordRaw } from 'vue-router';
+import { createRouter, createWebHistory, type NavigationGuardNext, type RouteLocationNormalized } from 'vue-router';
+import type { RouteRecordRaw, RouteMeta } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+
+interface CustomRouteMeta extends RouteMeta {
+  requiresAuth?: boolean;
+  requiresAdmin?: boolean;
+  layout?: string;
+}
 
 const routes: RouteRecordRaw[] = [
   {
@@ -64,12 +70,6 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, layout: 'default' },
   },
   {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: () => import('@/views/DashboardView.vue'),
-    meta: { requiresAuth: true, layout: 'default' },
-  },
-  {
     path: '/account',
     name: 'Account',
     component: () => import('@/views/AccountView.vue'),
@@ -88,22 +88,52 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, requiresAdmin: true, layout: 'default' },
   },
   {
+    path: '/admin/orders',
+    name: 'AdminOrders',
+    component: () => import('@/views/admin/OrdersManagementView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true, layout: 'default' },
+  },
+  {
     path: '/admin/products',
     name: 'AdminProducts',
     component: () => import('@/views/admin/ProductManagementView.vue'),
     meta: { requiresAuth: true, requiresAdmin: true, layout: 'default' },
   },
   {
-    path: '/admin/products/new',
+    path: '/admin/products/create',
     name: 'AdminProductCreate',
     component: () => import('@/views/admin/ProductFormView.vue'),
     meta: { requiresAuth: true, requiresAdmin: true, layout: 'default' },
   },
   {
-    path: '/admin/products/:id/edit',
+    path: '/admin/products/:id/update',
     name: 'AdminProductEdit',
     component: () => import('@/views/admin/ProductFormView.vue'),
     meta: { requiresAuth: true, requiresAdmin: true, layout: 'default' },
+  },
+  {
+    path: '/admin/categories',
+    name: 'AdminCategories',
+    component: () => import('@/views/admin/CategoryManagementView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true, layout: 'default' },
+  },
+  {
+    path: '/admin/users',
+    name: 'AdminUsers',
+    component: () => import('@/views/admin/UsersManagementView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true, layout: 'default' },
+  },
+  {
+    path: '/about',
+    name: 'About',
+    component: () => import('@/views/NotFoundView.vue'),
+    meta: { requiresAuth: false, layout: 'default' },
+  },
+  {
+    path: '/contact',
+    name: 'Contact',
+    component: () => import('@/views/NotFoundView.vue'),
+    meta: { requiresAuth: false, layout: 'default' },
   },
   {
     path: '/logout',
@@ -124,32 +154,72 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach((to, from, next) => {
-  const authStore = useAuthStore();
-  
-  // Initialize auth state from localStorage if needed
+const DEFAULT_REDIRECT_PATH = '/account';
+const ROUTE_NAMES = {
+  LOGIN: 'Login',
+  REGISTER: 'Register',
+  HOME: 'Home',
+} as const;
+
+const initializeAuthIfNeeded = (authStore: ReturnType<typeof useAuthStore>): void => {
   if (!authStore.user && authStore.accessToken) {
     authStore.initAuth();
   }
+};
 
-  // Check if route requires authentication
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    // Redirect to login with return URL
-    next({ name: 'Login', query: { redirect: to.fullPath } });
-    return;
+const handleUnauthenticatedAccess = (
+  to: RouteLocationNormalized,
+  next: NavigationGuardNext,
+  authStore: ReturnType<typeof useAuthStore>
+): boolean => {
+  const meta = to.meta as CustomRouteMeta;
+  if (meta.requiresAuth && !authStore.isAuthenticated) {
+    next({ name: ROUTE_NAMES.LOGIN, query: { redirect: to.fullPath } });
+    return true;
   }
+  return false;
+};
 
-  // Check if route requires admin role
-  if (to.meta.requiresAdmin && !authStore.isAdmin) {
-    // Redirect non-admin users away from admin routes
-    next({ name: 'Home' });
-    return;
+const handleUnauthorizedAccess = (
+  to: RouteLocationNormalized,
+  next: NavigationGuardNext,
+  authStore: ReturnType<typeof useAuthStore>
+): boolean => {
+  const meta = to.meta as CustomRouteMeta;
+  if (meta.requiresAdmin && !authStore.isAdmin) {
+    next({ name: ROUTE_NAMES.HOME });
+    return true;
   }
+  return false;
+};
 
-  // Redirect authenticated users away from login/register pages
-  if ((to.name === 'Login' || to.name === 'Register') && authStore.isAuthenticated) {
-    const redirect = (to.query.redirect as string) || '/dashboard';
+const handleAuthenticatedUserRedirect = (
+  to: RouteLocationNormalized,
+  next: NavigationGuardNext,
+  authStore: ReturnType<typeof useAuthStore>
+): boolean => {
+  if ((to.name === ROUTE_NAMES.LOGIN || to.name === ROUTE_NAMES.REGISTER) && authStore.isAuthenticated) {
+    const redirect = (to.query.redirect as string) || DEFAULT_REDIRECT_PATH;
     next(redirect);
+    return true;
+  }
+  return false;
+};
+
+router.beforeEach((to: RouteLocationNormalized, _from: RouteLocationNormalized, next: NavigationGuardNext) => {
+  const authStore = useAuthStore();
+
+  initializeAuthIfNeeded(authStore);
+
+  if (handleUnauthenticatedAccess(to, next, authStore)) {
+    return;
+  }
+
+  if (handleUnauthorizedAccess(to, next, authStore)) {
+    return;
+  }
+
+  if (handleAuthenticatedUserRedirect(to, next, authStore)) {
     return;
   }
 

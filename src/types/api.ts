@@ -6,11 +6,13 @@ export interface ApiResponse<T = unknown> {
   timestamp?: string;
 }
 
+export type SortDirection = 'ASC' | 'DESC';
+
 export interface PaginationRequest {
   page: number;
   size: number;
   sort?: string;
-  direction?: 'ASC' | 'DESC';
+  direction?: SortDirection;
 }
 
 export interface PaginationResponse<T> {

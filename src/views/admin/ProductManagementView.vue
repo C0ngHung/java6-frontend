@@ -25,6 +25,13 @@
               <p class="text-sm font-medium">Dashboard</p>
             </RouterLink>
             <RouterLink
+              to="/admin/orders"
+              class="flex items-center gap-3 rounded-lg px-3 py-2 text-text-light/80 hover:bg-gray-100 dark:text-text-dark/80 dark:hover:bg-white/5"
+            >
+              <span class="material-symbols-outlined text-xl">shopping_cart</span>
+              <p class="text-sm font-medium">Orders</p>
+            </RouterLink>
+            <RouterLink
               to="/admin/products"
               class="active flex items-center gap-3 rounded-lg bg-primary/10 px-3 py-2 text-primary dark:bg-primary/20 dark:text-white"
             >
@@ -37,13 +44,6 @@
             >
               <span class="material-symbols-outlined text-xl">category</span>
               <p class="text-sm font-medium">Categories</p>
-            </RouterLink>
-            <RouterLink
-              to="/admin/inventory"
-              class="flex items-center gap-3 rounded-lg px-3 py-2 text-text-light/80 hover:bg-gray-100 dark:text-text-dark/80 dark:hover:bg-white/5"
-            >
-              <span class="material-symbols-outlined text-xl">warehouse</span>
-              <p class="text-sm font-medium">Inventory</p>
             </RouterLink>
             <RouterLink
               to="/admin/users"
@@ -75,29 +75,6 @@
 
       <!-- Main Content Area -->
       <main class="flex-1">
-      <!-- TopNavBar -->
-      <header class="flex h-16 items-center justify-between whitespace-nowrap border-b border-solid border-border-light bg-panel-light px-8 dark:border-border-dark dark:bg-panel-dark sticky top-0 z-10">
-        <div class="flex items-center gap-4">
-          <h2 class="text-lg font-bold text-text-light dark:text-text-dark">Product Management</h2>
-        </div>
-        <div class="flex items-center gap-4">
-          <button class="flex h-10 w-10 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-transparent text-text-light/80 hover:bg-gray-100 dark:text-text-dark/80 dark:hover:bg-white/5">
-            <span class="material-symbols-outlined text-2xl">notifications</span>
-          </button>
-          <div class="flex items-center gap-3">
-            <div
-              class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-              data-alt="User avatar"
-              :style="{ backgroundImage: `url('${userAvatar}')` }"
-            ></div>
-            <div class="flex flex-col text-right">
-              <p class="text-sm font-medium text-text-light dark:text-text-dark">{{ userName }}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">{{ userRole }}</p>
-            </div>
-          </div>
-        </div>
-      </header>
-
       <!-- Content Panel -->
       <div class="p-8">
         <!-- Page Heading -->
@@ -119,21 +96,22 @@
         <div class="flex flex-col md:flex-row gap-4 mb-6">
           <div class="flex-grow">
             <label class="flex flex-col min-w-40 h-12 w-full">
-              <div class="flex w-full flex-1 items-stretch rounded-lg h-full">
-                <div class="text-gray-500 dark:text-gray-400 flex bg-white dark:bg-gray-800 items-center justify-center pl-4 rounded-l-lg border border-gray-200 dark:border-gray-700 border-r-0">
+              <div class="flex w-full flex-1 items-stretch rounded-lg h-full border bg-background shadow-xs dark:bg-input/30 dark:border-input">
+                <div class="text-gray-500 dark:text-gray-400 flex items-center justify-center pl-4 rounded-l-lg border-r border-gray-200 dark:border-input">
                   <span class="material-symbols-outlined">search</span>
                 </div>
                 <Input
                   v-model="filters.search"
                   type="text"
                   placeholder="Search by product name or SKU..."
-                  class="rounded-r-lg rounded-l-none border-l-0 h-full"
+                  class="rounded-r-lg rounded-l-none border-0 bg-transparent h-full focus-visible:ring-0 focus-visible:ring-offset-0"
                   @input="handleSearch"
                 />
               </div>
             </label>
           </div>
           <div class="flex gap-3">
+            <div class="relative">
             <Button
               variant="outline"
               @click="showCategoryFilter = !showCategoryFilter"
@@ -144,22 +122,8 @@
               </p>
               <span class="material-symbols-outlined text-gray-500 dark:text-gray-400">expand_more</span>
             </Button>
-            <Button
-              variant="outline"
-              @click="showStockFilter = !showStockFilter"
-              class="h-12"
-            >
-              <p class="text-gray-800 dark:text-gray-200 text-sm font-medium leading-normal">
-                {{ stockStatusFilter || 'Stock Status' }}
-              </p>
-              <span class="material-symbols-outlined text-gray-500 dark:text-gray-400">expand_more</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Dropdown Filters -->
-        <div v-if="showCategoryFilter" class="relative mb-4">
-          <div class="absolute z-10 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg mt-1">
+              <!-- Category Dropdown -->
+              <div v-if="showCategoryFilter" class="absolute z-10 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg mt-1 top-full left-0">
             <div class="p-2">
               <button
                 @click="handleCategorySelect(undefined)"
@@ -180,9 +144,19 @@
             </div>
           </div>
         </div>
-
-        <div v-if="showStockFilter" class="relative mb-4">
-          <div class="absolute z-10 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg mt-1">
+            <div class="relative">
+              <Button
+                variant="outline"
+                @click="showStockFilter = !showStockFilter"
+                class="h-12"
+              >
+                <p class="text-gray-800 dark:text-gray-200 text-sm font-medium leading-normal">
+                  {{ stockStatusFilter || 'Stock Status' }}
+                </p>
+                <span class="material-symbols-outlined text-gray-500 dark:text-gray-400">expand_more</span>
+              </Button>
+              <!-- Stock Status Dropdown -->
+              <div v-if="showStockFilter" class="absolute z-10 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg mt-1 top-full left-0">
             <div class="p-2">
               <button
                 v-for="status in stockStatusOptions"
@@ -193,6 +167,8 @@
               >
                 {{ status || 'All' }}
               </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -394,13 +370,6 @@ const router = useRouter();
 const authStore = useAuthStore();
 const toast = useToast();
 
-// User info
-const userName = computed(() => authStore.user?.username || 'Admin');
-const userRole = computed(() => 'Administrator');
-const userAvatar = ref(
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuCZ9-hq_kXULs2c942Dn9iHS5_oWynWuHdvtd4R6gPBfYkUzu09wktgtHKm07wMD7-N_L1DUT7eksMPHggoBHdzi2dxdC0iJtXjypvOctS1Tayqj98e6ErZmJO7wmPinsQfAWzugEOs0qJMSe1Oz7ulGy4eZmmxPqayfwYemRys97jxPP1-P0QwWi3CkSuzm1KnxdAmebdOwuijEwSU-rvUu8wZmAZmW5QVRcShhIpqmmRN5sc1Wde_7U2lw3pkkciXqOebHed__Kk'
-);
-
 // State
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -580,7 +549,7 @@ const confirmDelete = async () => {
     await productApi.delete(productToDelete.value.id);
     toast.success('Product deleted successfully!');
     await fetchProducts();
-  } catch (err: any) {
+  } catch (err: unknown) {
     toast.error(getErrorMessage(err, DEFAULT_ERROR_MESSAGES.PRODUCT_DELETE));
   } finally {
     showDeleteDialog.value = false;
@@ -609,19 +578,17 @@ const fetchProducts = async () => {
   error.value = null;
 
   try {
-    const params: PaginationRequest & Record<string, any> = {
+    const params: PaginationRequest & { name?: string; categoryId?: string } = {
       page: pagination.value.page,
       size: pagination.value.size,
       sort: 'createdAt',
       direction: 'DESC',
     };
 
-    // Search by name or SKU
     if (filters.value.search) {
       params.name = filters.value.search;
     }
 
-    // Category filter
     if (filters.value.categoryId) {
       params.categoryId = String(filters.value.categoryId);
     }
@@ -652,8 +619,9 @@ const fetchProducts = async () => {
     } else {
       error.value = 'Failed to load products';
     }
-  } catch (err: any) {
-    error.value = err.response?.data?.message || 'Failed to load products. Please try again.';
+  } catch (err: unknown) {
+    const axiosError = err as { response?: { data?: { message?: string } } };
+    error.value = axiosError.response?.data?.message || 'Failed to load products. Please try again.';
   } finally {
     loading.value = false;
   }
@@ -670,7 +638,9 @@ watch(
 // Close dropdowns when clicking outside
 const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as HTMLElement;
-  if (!target.closest('.relative')) {
+  // Check if click is outside the filter buttons and their dropdowns
+  const filterContainer = target.closest('.flex.gap-3');
+  if (!filterContainer) {
     showCategoryFilter.value = false;
     showStockFilter.value = false;
   }

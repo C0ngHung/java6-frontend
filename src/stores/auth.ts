@@ -1,126 +1,121 @@
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
+import { ref, computed, type Ref, type ComputedRef } from 'vue';
 import type { User } from '@/types/user';
 import { authApi } from '@/services/auth';
 import { STORAGE_KEYS } from '@/constants';
 
-export const useAuthStore = defineStore('auth', () => {
-  const user = ref<User | null>(null);
-  const accessToken = ref<string | null>(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN));
-  const refreshToken = ref<string | null>(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN));
+const STORAGE_USER_KEY = 'user';
+const DEFAULT_ROLE = 'USER';
+const ADMIN_ROLE = 'ADMIN';
+const ROLE_ADMIN = 'ROLE_ADMIN';
 
-  const isAuthenticated = computed(() => {
+export const useAuthStore = defineStore('auth', () => {
+  const user: Ref<User | null> = ref(null);
+  const accessToken: Ref<string | null> = ref(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN));
+  const refreshToken: Ref<string | null> = ref(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN));
+
+  const isAuthenticated: ComputedRef<boolean> = computed(() => {
     return !!accessToken.value && !!user.value;
   });
 
-  const isAdmin = computed(() => {
-    if (!user.value || !user.value.role) {
+  const isAdmin: ComputedRef<boolean> = computed(() => {
+    if (!user.value?.role) {
       return false;
     }
-    // Check if role is ADMIN (case-insensitive)
+
     const role = user.value.role.toUpperCase();
-    return role === 'ADMIN' || role === 'ROLE_ADMIN' || role.includes('ADMIN');
+    return role === ADMIN_ROLE || role === ROLE_ADMIN || role.includes(ADMIN_ROLE);
   });
 
-  const setUser = (userData: User | null) => {
+  const setUser = (userData: User | null): void => {
     user.value = userData;
   };
 
-  const setTokens = (access: string, refresh: string) => {
+  const setTokens = (access: string, refresh: string): void => {
     accessToken.value = access;
     refreshToken.value = refresh;
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, access);
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refresh);
   };
 
-  const clearAuth = () => {
+  const clearAuth = (): void => {
     user.value = null;
     accessToken.value = null;
     refreshToken.value = null;
     localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-    localStorage.removeItem('user');
+    localStorage.removeItem(STORAGE_USER_KEY);
   };
 
-  const login = async (username: string, password: string) => {
+  const login = async (username: string, password: string): Promise<ReturnType<typeof authApi.login>> => {
+    const response = await authApi.login(username, password);
+    const { accessToken: access, refreshToken: refresh, userId, email, fullName, phone, roles, permissions } = response.data;
+
+    const userData: User = {
+      id: userId,
+      username,
+      email,
+      fullName,
+      phone,
+      isActive: true,
+      role: roles[0] || DEFAULT_ROLE,
+      authorities: permissions,
+    };
+
+    setUser(userData);
+    setTokens(access, refresh);
+    localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(userData));
+
+    const { useCartStore } = await import('./cart');
+    const cartStore = useCartStore();
+    if (cartStore.anonymousId) {
+      await cartStore.mergeCartOnLogin(userId);
+    } else {
+      await cartStore.fetchCart();
+    }
+
+    return response;
+  };
+
+  const initAuth = (): void => {
+    const storedUser = localStorage.getItem(STORAGE_USER_KEY);
+    if (!storedUser || !accessToken.value) {
+      return;
+    }
+
     try {
-      const response = await authApi.login(username, password);
-      const { accessToken: access, refreshToken: refresh, userId, email, fullName, phone, roles, permissions } = response.data;
-
-      // Map response to User object
-      const userData: User = {
-        id: userId,
-        username: username,
-        email: email,
-        fullName: fullName,
-        phone: phone,
-        isActive: true,
-        role: roles[0] || 'USER', // Use first role or default to USER
-        authorities: permissions,
-      };
-
-      setUser(userData);
-      setTokens(access, refresh);
-
-      // Persist user to localStorage to survive refresh (simple approach)
-      localStorage.setItem('user', JSON.stringify(userData));
-
-      // Merge guest cart into user cart after login
-      const { useCartStore } = await import('./cart');
-      const cartStore = useCartStore();
-      if (cartStore.anonymousId) {
-        await cartStore.mergeCartOnLogin(userId);
-      } else {
-        // Just fetch user cart if no guest cart exists
-        await cartStore.fetchCart();
-      }
-
-      return response;
-    } catch (error) {
-      throw error;
+      user.value = JSON.parse(storedUser);
+    } catch {
+      clearAuth();
     }
   };
 
-  const initAuth = () => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser && accessToken.value) {
-      try {
-        user.value = JSON.parse(storedUser);
-      } catch (e) {
-        clearAuth();
-      }
-    }
-  };
-
-  const logout = async () => {
+  const logout = async (): Promise<void> => {
     try {
       if (accessToken.value) {
         await authApi.logout(accessToken.value);
       }
-    } catch (error) {
-      // Logout error - silently fail
+    } catch {
+      // Silently fail - logout should always succeed
     } finally {
-      // Clear cart UI state only (cart remains in database for user to continue shopping when logging back in)
-      // This follows best practices from major e-commerce platforms (Shopee, Amazon, etc.)
       try {
         const { useCartStore } = await import('./cart');
         const cartStore = useCartStore();
-        // Only clear frontend state - cart persists in database
         cartStore.cart = null;
-        // Keep anonymousId in case user wants to continue as guest
-      } catch (error) {
+      } catch {
         // Silently fail - cart state clearing is not critical
       }
       clearAuth();
     }
   };
 
-  const refreshAccessToken = async () => {
-    try {
-      if (!refreshToken.value) {
-        throw new Error('No refresh token available');
-      }
+  const refreshAccessToken = async (): Promise<string> => {
+    if (!refreshToken.value) {
+      clearAuth();
+      throw new Error('No refresh token available');
+    }
 
+    try {
       const response = await authApi.refreshToken(refreshToken.value);
       const { accessToken: access } = response.data;
 

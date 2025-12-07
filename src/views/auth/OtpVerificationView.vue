@@ -224,12 +224,12 @@ const handleVerifyOtp = async () => {
         router.push({ name: 'Login', query: { activated: 'true' } });
       }, 2000);
     }
-  } catch (err: any) {
-    const errorMessage = err.response?.data?.message || err.response?.data?.errors?.[0] || 'Mã OTP không hợp lệ. Vui lòng thử lại.';
+  } catch (err: unknown) {
+    const axiosError = err as { response?: { data?: { message?: string; errors?: string[] } } };
+    const errorMessage = axiosError.response?.data?.message || axiosError.response?.data?.errors?.[0] || 'Mã OTP không hợp lệ. Vui lòng thử lại.';
     error.value = errorMessage;
     errors.otp = errorMessage;
     
-    // Clear OTP on error
     otpDigits.fill('');
     otpInputRefs.value[0]?.focus();
   } finally {
@@ -237,8 +237,10 @@ const handleVerifyOtp = async () => {
   }
 };
 
-const handleResendOtp = async () => {
-  if (resendCooldown.value > 0 || resendLoading.value) return;
+const handleResendOtp = async (): Promise<void> => {
+  if (resendCooldown.value > 0 || resendLoading.value) {
+    return;
+  }
 
   resendLoading.value = true;
   error.value = '';
@@ -247,14 +249,11 @@ const handleResendOtp = async () => {
     await authApi.sendOtp(email.value);
     success.value = 'Mã OTP mới đã được gửi đến email của bạn';
     
-    // Reset OTP inputs
     otpDigits.fill('');
     otpInputRefs.value[0]?.focus();
     
-    // Reset timer
     timeLeft.value = 15 * 60;
     
-    // Start resend cooldown (60 seconds)
     resendCooldown.value = 60;
     resendTimer = setInterval(() => {
       resendCooldown.value--;
@@ -265,8 +264,9 @@ const handleResendOtp = async () => {
         }
       }
     }, 1000);
-  } catch (err: any) {
-    error.value = err.response?.data?.message || err.response?.data?.errors?.[0] || 'Không thể gửi lại mã OTP. Vui lòng thử lại sau.';
+  } catch (err: unknown) {
+    const axiosError = err as { response?: { data?: { message?: string; errors?: string[] } } };
+    error.value = axiosError.response?.data?.message || axiosError.response?.data?.errors?.[0] || 'Không thể gửi lại mã OTP. Vui lòng thử lại sau.';
   } finally {
     resendLoading.value = false;
   }

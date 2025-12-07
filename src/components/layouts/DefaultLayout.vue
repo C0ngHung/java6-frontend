@@ -11,10 +11,10 @@
           </div>
           <div class="hidden items-center gap-6 md:flex">
             <RouterLink to="/" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">Home</RouterLink>
-            <a href="#contact" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">Contact</a>
-            <a href="#about" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">About</a>
+            <RouterLink to="/contact" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">Contact</RouterLink>
+            <RouterLink to="/about" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">About</RouterLink>
             <RouterLink v-if="!authStore.isAuthenticated" to="/register" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">Sign Up</RouterLink>
-            <RouterLink v-else-if="authStore.isAdmin" to="/dashboard" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">Dashboard</RouterLink>
+            <RouterLink v-else-if="authStore.isAdmin" to="/admin/dashboard" class="text-text-primary text-base font-normal leading-normal transition-colors hover:text-primary">Dashboard</RouterLink>
           </div>
           <div class="flex items-center gap-4">
             <div class="relative hidden lg:block">
@@ -167,7 +167,7 @@
                   <RouterLink to="/login" class="hover:text-white">Login / Register</RouterLink>
                 </li>
                 <li v-else-if="authStore.isAdmin">
-                  <RouterLink to="/dashboard" class="hover:text-white">Dashboard</RouterLink>
+                  <RouterLink to="/admin/dashboard" class="hover:text-white">Dashboard</RouterLink>
                 </li>
                 <li>
                   <RouterLink to="/cart" class="hover:text-white">Cart</RouterLink>
@@ -188,7 +188,7 @@
                 <li><a href="#" class="hover:text-white">Privacy Policy</a></li>
                 <li><a href="#" class="hover:text-white">Terms Of Use</a></li>
                 <li><a href="#" class="hover:text-white">FAQ</a></li>
-                <li><a href="#" class="hover:text-white">Contact</a></li>
+                <li><RouterLink to="/contact" class="hover:text-white">Contact</RouterLink></li>
               </ul>
             </div>
 

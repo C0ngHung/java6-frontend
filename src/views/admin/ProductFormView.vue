@@ -39,13 +39,6 @@
                 <p class="text-sm font-medium">Categories</p>
               </RouterLink>
               <RouterLink
-                to="/admin/inventory"
-                class="flex items-center gap-3 rounded-lg px-3 py-2 text-text-light/80 hover:bg-gray-100 dark:text-text-dark/80 dark:hover:bg-white/5"
-              >
-                <span class="material-symbols-outlined text-xl">warehouse</span>
-                <p class="text-sm font-medium">Inventory</p>
-              </RouterLink>
-              <RouterLink
                 to="/admin/users"
                 class="flex items-center gap-3 rounded-lg px-3 py-2 text-text-light/80 hover:bg-gray-100 dark:text-text-dark/80 dark:hover:bg-white/5"
               >
@@ -431,7 +424,7 @@ const handleSave = async () => {
       await productApi.create(createData);
     }
     router.push('/admin/products');
-  } catch (error: any) {
+  } catch (error: unknown) {
     toast.error(getErrorMessage(error, DEFAULT_ERROR_MESSAGES.PRODUCT_SAVE));
   } finally {
     loading.value = false;
@@ -483,7 +476,7 @@ const fetchProduct = async () => {
       };
       priceInput.value = (product.priceCents / 100).toFixed(2);
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     toast.error(getErrorMessage(error, DEFAULT_ERROR_MESSAGES.PRODUCT_LOAD));
     router.push('/admin/products');
   } finally {

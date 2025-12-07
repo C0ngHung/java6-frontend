@@ -1,6 +1,6 @@
 <template>
   <Dialog :open="isOpen" @update:open="(open) => !open && handleClose()">
-    <DialogContent class="max-w-7xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+    <DialogContent class="!w-[95vw] !max-w-[95vw] sm:!max-w-7xl max-h-[90vh] overflow-y-auto flex flex-col p-0">
       <DialogHeader class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
         <DialogTitle class="text-slate-900 dark:text-white text-2xl font-black leading-tight tracking-tighter">
           {{ isEditMode ? 'Edit Product' : 'Create Product' }}
@@ -139,10 +139,10 @@
                         </Label>
                         <Select v-model="form.categoryId">
                           <SelectTrigger class="h-12 w-full">
-                            <SelectValue :placeholder="form.categoryId ? categories.find(c => c.id === form.categoryId)?.name : 'Select a category'" />
+                            <SelectValue :placeholder="form.categoryId && form.categoryId !== DEFAULT_CATEGORY_ID ? categories.find(c => c.id === form.categoryId)?.name : 'Select a category'" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem :value="0" disabled>Select a category</SelectItem>
+                            <SelectItem :value="DEFAULT_CATEGORY_ID" disabled>Select a category</SelectItem>
                             <SelectItem v-for="category in categories" :key="category.id" :value="category.id">
                               {{ category.name }}
                             </SelectItem>
@@ -165,7 +165,7 @@
                           Price *
                         </Label>
                         <div class="relative">
-                          <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 dark:text-slate-500 z-10">{{ form.currencyCode || 'VND' }}</span>
+                          <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 dark:text-slate-500 z-10" aria-hidden="true">{{ form.currencyCode || DEFAULT_CURRENCY_CODE }}</span>
                           <Input
                             v-model.number="form.priceCents"
                             type="number"
@@ -276,7 +276,9 @@ const loading = ref(false);
 const categories = ref<CategoryResponseDto[]>([]);
 const toast = useToast();
 
-// Form state - using 0 as placeholder for undefined categoryId (SelectItem requires a value)
+const DEFAULT_CATEGORY_ID = 0;
+const DEFAULT_CURRENCY_CODE = 'VND';
+
 const form = ref<Partial<ProductCreateDto> & { categoryId?: number }>({
   sku: '',
   slug: '',
@@ -284,8 +286,8 @@ const form = ref<Partial<ProductCreateDto> & { categoryId?: number }>({
   description: '',
   imageUrl: '',
   priceCents: 0,
-  currencyCode: 'VND',
-  categoryId: 0,
+  currencyCode: DEFAULT_CURRENCY_CODE,
+  categoryId: DEFAULT_CATEGORY_ID,
   isActive: true,
   quantity: 0,
   safetyStock: 0,
@@ -305,8 +307,8 @@ const resetForm = () => {
     description: '',
     imageUrl: '',
     priceCents: 0,
-    currencyCode: 'VND',
-    categoryId: 0,
+    currencyCode: DEFAULT_CURRENCY_CODE,
+    categoryId: DEFAULT_CATEGORY_ID,
     isActive: true,
     quantity: 0,
     safetyStock: 0,
@@ -326,12 +328,11 @@ watch(
         imageUrl: product.imageUrl,
         priceCents: product.priceCents,
         currencyCode: product.currencyCode,
-        categoryId: product.categoryId ?? 0,
+        categoryId: product.categoryId ?? DEFAULT_CATEGORY_ID,
         isActive: product.isActive,
         quantity: product.quantity ?? 0,
         safetyStock: product.safetyStock ?? 0,
       };
-      // Nhập bao nhiêu hiển thị bấy nhiêu - priceCents đã được set ở trên
     } else {
       resetForm();
     }
@@ -427,7 +428,7 @@ const handleSave = async () => {
     if (isEditMode.value && props.product) {
       const updateData: ProductUpdateDto = {
         ...form.value,
-        categoryId: form.value.categoryId === 0 ? undefined : form.value.categoryId,
+        categoryId: form.value.categoryId === DEFAULT_CATEGORY_ID ? undefined : form.value.categoryId,
       };
       await productApi.update(props.product.id, updateData);
     } else {
@@ -438,7 +439,7 @@ const handleSave = async () => {
         description: form.value.description,
         imageUrl: form.value.imageUrl,
         priceCents: form.value.priceCents!,
-        currencyCode: form.value.currencyCode || 'VND',
+            currencyCode: form.value.currencyCode || DEFAULT_CURRENCY_CODE,
         categoryId: form.value.categoryId === 0 ? undefined : form.value.categoryId,
         isActive: form.value.isActive ?? true,
         quantity: form.value.quantity ?? 0,

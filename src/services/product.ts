@@ -3,8 +3,15 @@ import { API_ENDPOINTS } from '@/constants';
 import type { ApiResponse, PaginationRequest, PaginationResponse } from '@/types/api';
 import type { ProductCreateDto, ProductResponseDto, ProductUpdateDto } from '@/types/product';
 
+interface ProductSearchParams extends PaginationRequest {
+  sort?: string;
+  direction?: 'ASC' | 'DESC';
+  search?: string;
+  categoryId?: number;
+}
+
 export const productApi = {
-  getAll: async (params: PaginationRequest & { sort?: string; direction?: 'ASC' | 'DESC'; search?: string; categoryId?: number }): Promise<ApiResponse<PaginationResponse<ProductResponseDto>>> => {
+  getAll: async (params: ProductSearchParams): Promise<ApiResponse<PaginationResponse<ProductResponseDto>>> => {
     const response = await axiosInstance.get<ApiResponse<PaginationResponse<ProductResponseDto>>>(
       API_ENDPOINTS.PRODUCT.BASE,
       { params }
@@ -20,21 +27,23 @@ export const productApi = {
   },
 
   getBySlug: async (slug: string): Promise<ApiResponse<ProductResponseDto>> => {
+    const SLUG_SEARCH_PAGE = 1;
+    const SLUG_SEARCH_SIZE = 10;
+
     const response = await axiosInstance.get<ApiResponse<PaginationResponse<ProductResponseDto>>>(
       API_ENDPOINTS.PRODUCT.BASE,
       {
         params: {
-          page: 1,
-          size: 10,
-          slug: slug,
+          page: SLUG_SEARCH_PAGE,
+          size: SLUG_SEARCH_SIZE,
+          slug,
         },
       }
     );
-    
+
     if (response.data.success && response.data.data?.content && response.data.data.content.length > 0) {
-      // Find exact match slug (backend uses LIKE, so we need to filter for exact match)
-      const exactMatch = response.data.data.content.find(p => p.slug === slug);
-      
+      const exactMatch = response.data.data.content.find((p) => p.slug === slug);
+
       if (exactMatch) {
         return {
           success: true,
@@ -44,10 +53,10 @@ export const productApi = {
         };
       }
     }
-    
+
     return {
       success: false,
-      data: null as any,
+      data: null as unknown as ProductResponseDto,
       message: 'Product not found',
       timestamp: new Date().toISOString(),
     };

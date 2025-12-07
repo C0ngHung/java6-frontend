@@ -28,9 +28,9 @@
                 <p class="text-base font-normal">{{ heroBanner.label }}</p>
               </div>
               <h1 class="max-w-xs text-3xl font-semibold leading-tight sm:text-5xl">{{ heroBanner.title }}</h1>
-              <RouterLink to="/products" class="flex items-center gap-2 font-medium underline">
+              <RouterLink :to="PRODUCTS_PATH" class="flex items-center gap-2 font-medium underline">
                 Shop Now
-                <span class="material-symbols-outlined">arrow_right_alt</span>
+                <span class="material-symbols-outlined" aria-hidden="true">arrow_right_alt</span>
               </RouterLink>
             </div>
           </div>
@@ -76,15 +76,16 @@
                 class="rounded-full"
                 @click="scrollFlashSales('left')"
               >
-                <span class="material-symbols-outlined">arrow_back</span>
+                <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
               </Button>
               <Button
                 variant="outline"
                 size="icon"
                 class="rounded-full"
                 @click="scrollFlashSales('right')"
+                aria-label="Scroll flash sales right"
               >
-                <span class="material-symbols-outlined">arrow_forward</span>
+                <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
               </Button>
             </div>
           </div>
@@ -104,11 +105,11 @@
                   -{{ product.discount }}%
                 </div>
                 <div class="absolute top-3 right-3 flex flex-col gap-2">
-                  <Button variant="ghost" size="icon" class="h-8 w-8 rounded-full bg-white text-text-primary hover:text-primary" @click.stop>
-                    <span class="material-symbols-outlined text-xl">favorite</span>
+                  <Button variant="ghost" size="icon" class="h-8 w-8 rounded-full bg-white text-text-primary hover:text-primary" @click.stop aria-label="Add to favorites">
+                    <span class="material-symbols-outlined text-xl" aria-hidden="true">favorite</span>
                   </Button>
-                  <Button variant="ghost" size="icon" class="h-8 w-8 rounded-full bg-white text-text-primary hover:text-primary" @click.stop="handleProductClick(product)">
-                    <span class="material-symbols-outlined text-xl">visibility</span>
+                  <Button variant="ghost" size="icon" class="h-8 w-8 rounded-full bg-white text-text-primary hover:text-primary" @click.stop="handleProductClick(product)" aria-label="View product">
+                    <span class="material-symbols-outlined text-xl" aria-hidden="true">visibility</span>
                   </Button>
                 </div>
                 <Button 
@@ -130,7 +131,7 @@
           <div class="mt-8 text-center">
             <Button as-child>
               <RouterLink 
-                to="/products" 
+                :to="PRODUCTS_PATH" 
                 class="inline-block rounded bg-primary px-12 py-4 font-medium text-white transition-colors hover:bg-red-700"
               >
                 View All Products
@@ -281,7 +282,7 @@
               <div class="relative">
                 <h3 class="text-2xl font-semibold">{{ newArrivalProducts[0].name }}</h3>
                 <p class="max-w-xs text-sm">{{ newArrivalProducts[0].description }}</p>
-                <RouterLink to="/products" class="mt-2 inline-block font-medium underline">Shop Now</RouterLink>
+                <RouterLink :to="PRODUCTS_PATH" class="mt-2 inline-block font-medium underline">Shop Now</RouterLink>
               </div>
             </div>
             <div class="flex flex-col gap-6">
@@ -295,7 +296,7 @@
                 <div class="relative">
                   <h3 class="text-2xl font-semibold">{{ product.name }}</h3>
                   <p class="max-w-xs text-sm">{{ product.description }}</p>
-                  <RouterLink to="/products" class="mt-2 inline-block font-medium underline">Shop Now</RouterLink>
+                  <RouterLink :to="PRODUCTS_PATH" class="mt-2 inline-block font-medium underline">Shop Now</RouterLink>
                 </div>
               </div>
             </div>
@@ -314,11 +315,31 @@ import { useCartStore } from '@/stores/cart';
 import type { CategoryResponseDto } from '@/types/category';
 import type { ProductResponseDto } from '@/types/product';
 
+const PRODUCTS_PATH = '/products';
+const DEFAULT_PLACEHOLDER_IMAGE = 'https://placehold.co/400';
+const DEFAULT_CATEGORY_PAGE = 1;
+const DEFAULT_CATEGORY_SIZE = 10;
+const DEFAULT_PRODUCT_PAGE = 1;
+const DEFAULT_PRODUCT_SIZE = 10;
+const DEFAULT_SORT_FIELD = 'createdAt';
+const DEFAULT_SORT_DIRECTION = 'DESC';
+const CENTS_TO_CURRENCY_DIVISOR = 100;
+const PRICE_MULTIPLIER = 1.2;
+const DISCOUNT_PERCENTAGE = 20;
+const NEW_ARRIVAL_COUNT = 4;
+const BEST_SELLING_COUNT = 4;
+const COUNTDOWN_INTERVAL_MS = 1000;
+const SCROLL_AMOUNT = 300;
+const MAX_SECONDS = 59;
+const MAX_MINUTES = 59;
+const MAX_HOURS = 23;
+const PAD_START_LENGTH = 2;
+const PAD_START_CHAR = '0';
+
 const router = useRouter();
 const flashSalesContainer = ref<HTMLElement | null>(null);
 const cartStore = useCartStore();
 
-// Countdown timer
 const countdown = ref({
   days: 3,
   hours: 23,
@@ -378,88 +399,83 @@ const musicBanner = ref({
   image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCqJFXx0NC9JH-Uin8yYR6dMR5sdJY24a3KApzrw0wNUbN6SR0eO9T1Oy60G3kNqm6zaXzDfvJIev84Vg1YwcbV3dNeuBWH1iMBHxNaE4ZXxjHWhkGJauT66OtQFiWqK_nP6TQZg14BbCHrsJozuYr3rBuQxsVPDXRy90kRtcVkKIRwWH3bvGxA1aPsuCs7ACNOAa77hmK8Tlq8YxrrpyrmSW_fPBl2uktbiwGD7FMNi2kOY1Bc8jPOaDRSXeaO3IiNWBFpTO-Ewag',
 });
 
-// Fetch data
-const fetchData = async () => {
+const fetchData = async (): Promise<void> => {
   try {
-    // Fetch Categories
-    const categoryRes = await categoryApi.getAll({ page: 1, size: 10 });
+    const categoryRes = await categoryApi.getAll({ page: DEFAULT_CATEGORY_PAGE, size: DEFAULT_CATEGORY_SIZE });
     if (categoryRes.success) {
-      categories.value = categoryRes.data.content.map(c => ({
+      categories.value = categoryRes.data.content.map((c) => ({
         ...c,
-        hasChildren: false // Backend doesn't support hierarchy yet
+        hasChildren: false,
       }));
     }
 
-    // Fetch Products (New Arrivals)
     const productRes = await productApi.getAll({ 
-      page: 1, 
-      size: 10, 
-      sort: 'createdAt', 
-      direction: 'DESC' 
+      page: DEFAULT_PRODUCT_PAGE, 
+      size: DEFAULT_PRODUCT_SIZE, 
+      sort: DEFAULT_SORT_FIELD, 
+      direction: DEFAULT_SORT_DIRECTION,
     });
     
     if (productRes.success) {
-      const products: DisplayProduct[] = productRes.data.content.map(p => ({
+      const products: DisplayProduct[] = productRes.data.content.map((p) => ({
         ...p,
-        price: p.priceCents / 100, // Convert cents to dollars
-        originalPrice: (p.priceCents * 1.2) / 100, // Fake original price
-        discount: 20,
-        image: p.imageUrl || 'https://placehold.co/400',
+        price: p.priceCents / CENTS_TO_CURRENCY_DIVISOR,
+        originalPrice: (p.priceCents * PRICE_MULTIPLIER) / CENTS_TO_CURRENCY_DIVISOR,
+        discount: DISCOUNT_PERCENTAGE,
+        image: p.imageUrl || DEFAULT_PLACEHOLDER_IMAGE,
       }));
 
-      newArrivalProducts.value = products.slice(0, 4);
+      newArrivalProducts.value = products.slice(0, NEW_ARRIVAL_COUNT);
       flashSaleProducts.value = products;
-      bestSellingProducts.value = products.slice(0, 4);
+      bestSellingProducts.value = products.slice(0, BEST_SELLING_COUNT);
     }
-  } catch (error) {
+  } catch {
     // Error handled silently - page will show empty state
   }
 };
 
-// Methods
 const formatTime = (value: number): string => {
-  return value.toString().padStart(2, '0');
+  return value.toString().padStart(PAD_START_LENGTH, PAD_START_CHAR);
 };
 
-const handleProductClick = (product: ProductResponseDto) => {
-  router.push(`/products/${product.slug}`);
+const handleProductClick = (product: ProductResponseDto): void => {
+  router.push(`${PRODUCTS_PATH}/${product.slug}`);
 };
 
-const handleAddToCart = async (productId: number) => {
+const handleAddToCart = async (productId: number): Promise<void> => {
   try {
     await cartStore.addItem(productId, 1);
-  } catch (error) {
+  } catch {
     // Error is handled by cart store with toast
   }
 };
 
-const scrollFlashSales = (direction: 'left' | 'right') => {
+const scrollFlashSales = (direction: 'left' | 'right'): void => {
   if (flashSalesContainer.value) {
-    const scrollAmount = 300;
     flashSalesContainer.value.scrollBy({
-      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      left: direction === 'left' ? -SCROLL_AMOUNT : SCROLL_AMOUNT,
       behavior: 'smooth',
     });
   }
 };
 
-const scrollCategories = (direction: 'left' | 'right') => {
+const scrollCategories = (_direction: 'left' | 'right'): void => {
   // Categories are displayed in a grid, scrolling not needed
 };
 
-const updateCountdown = () => {
+const updateCountdown = (): void => {
   if (countdown.value.seconds > 0) {
     countdown.value.seconds--;
   } else {
-    countdown.value.seconds = 59;
+    countdown.value.seconds = MAX_SECONDS;
     if (countdown.value.minutes > 0) {
       countdown.value.minutes--;
     } else {
-      countdown.value.minutes = 59;
+      countdown.value.minutes = MAX_MINUTES;
       if (countdown.value.hours > 0) {
         countdown.value.hours--;
       } else {
-        countdown.value.hours = 23;
+        countdown.value.hours = MAX_HOURS;
         if (countdown.value.days > 0) {
           countdown.value.days--;
         }
@@ -468,19 +484,19 @@ const updateCountdown = () => {
   }
 };
 
-const updateMusicCountdown = () => {
+const updateMusicCountdown = (): void => {
   if (musicCountdown.value.seconds > 0) {
     musicCountdown.value.seconds--;
   } else {
-    musicCountdown.value.seconds = 59;
+    musicCountdown.value.seconds = MAX_SECONDS;
     if (musicCountdown.value.minutes > 0) {
       musicCountdown.value.minutes--;
     } else {
-      musicCountdown.value.minutes = 59;
+      musicCountdown.value.minutes = MAX_MINUTES;
       if (musicCountdown.value.hours > 0) {
         musicCountdown.value.hours--;
       } else {
-        musicCountdown.value.hours = 23;
+        musicCountdown.value.hours = MAX_HOURS;
         if (musicCountdown.value.days > 0) {
           musicCountdown.value.days--;
         }
@@ -490,10 +506,9 @@ const updateMusicCountdown = () => {
 };
 
 onMounted(() => {
-  countdownInterval = setInterval(updateCountdown, 1000);
-  musicCountdownInterval = setInterval(updateMusicCountdown, 1000);
+  countdownInterval = setInterval(updateCountdown, COUNTDOWN_INTERVAL_MS);
+  musicCountdownInterval = setInterval(updateMusicCountdown, COUNTDOWN_INTERVAL_MS);
   fetchData();
-  // Initialize cart if not already loaded
   if (cartStore.cartCount === 0) {
     cartStore.initCart();
   }

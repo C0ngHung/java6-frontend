@@ -1,7 +1,10 @@
 <template>
-  <div class="relative flex min-h-screen w-full flex-row font-display bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark">
-    <!-- SideNavBar -->
-    <aside class="flex h-screen w-64 flex-col border-r border-border-light dark:border-border-dark bg-panel-light dark:bg-panel-dark fixed">
+  <div class="relative flex min-h-screen w-full flex-col font-display bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark">
+    <!-- Top Header (if needed) -->
+    
+    <div class="flex flex-1 flex-row">
+      <!-- SideNavBar -->
+      <aside class="flex w-64 flex-col border-r border-border-light dark:border-border-dark bg-panel-light dark:bg-panel-dark overflow-y-auto">
       <div class="flex h-full flex-col justify-between p-4">
         <div class="flex flex-col gap-6">
           <div class="flex items-center gap-3 px-2">
@@ -22,6 +25,13 @@
               <p class="text-sm font-medium">Dashboard</p>
             </RouterLink>
             <RouterLink
+              to="/admin/orders"
+              class="flex items-center gap-3 rounded-lg px-3 py-2 text-text-light/80 hover:bg-gray-100 dark:text-text-dark/80 dark:hover:bg-white/5"
+            >
+              <span class="material-symbols-outlined text-xl">shopping_cart</span>
+              <p class="text-sm font-medium">Orders</p>
+            </RouterLink>
+            <RouterLink
               to="/admin/products"
               class="flex items-center gap-3 rounded-lg px-3 py-2 text-text-light/80 hover:bg-gray-100 dark:text-text-dark/80 dark:hover:bg-white/5"
             >
@@ -34,13 +44,6 @@
             >
               <span class="material-symbols-outlined text-xl">category</span>
               <p class="text-sm font-medium">Categories</p>
-            </RouterLink>
-            <RouterLink
-              to="/admin/inventory"
-              class="flex items-center gap-3 rounded-lg px-3 py-2 text-text-light/80 hover:bg-gray-100 dark:text-text-dark/80 dark:hover:bg-white/5"
-            >
-              <span class="material-symbols-outlined text-xl">warehouse</span>
-              <p class="text-sm font-medium">Inventory</p>
             </RouterLink>
             <RouterLink
               to="/admin/users"
@@ -70,31 +73,8 @@
       </div>
     </aside>
 
-    <!-- Main Content Area -->
-    <main class="ml-64 flex-1">
-      <!-- TopNavBar -->
-      <header class="flex h-16 items-center justify-between whitespace-nowrap border-b border-solid border-border-light bg-panel-light px-8 dark:border-border-dark dark:bg-panel-dark sticky top-0 z-10">
-        <div class="flex items-center gap-4">
-          <h2 class="text-lg font-bold text-text-light dark:text-text-dark">Dashboard</h2>
-        </div>
-        <div class="flex items-center gap-4">
-          <button class="flex h-10 w-10 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-transparent text-text-light/80 hover:bg-gray-100 dark:text-text-dark/80 dark:hover:bg-white/5">
-            <span class="material-symbols-outlined text-2xl">notifications</span>
-          </button>
-          <div class="flex items-center gap-3">
-            <div
-              class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-              data-alt="User avatar image with a gradient background"
-              :style="{ backgroundImage: `url('${userAvatar}')` }"
-            ></div>
-            <div class="flex flex-col text-right">
-              <p class="text-sm font-medium text-text-light dark:text-text-dark">{{ userName }}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">{{ userRole }}</p>
-            </div>
-          </div>
-        </div>
-      </header>
-
+      <!-- Main Content Area -->
+      <main class="flex-1">
       <!-- Content Panel -->
       <div class="p-8">
         <!-- HeadlineText -->
@@ -156,7 +136,8 @@
           </div>
         </div>
       </div>
-    </main>
+      </main>
+    </div>
   </div>
 </template>
 
@@ -169,10 +150,6 @@ const router = useRouter();
 const authStore = useAuthStore();
 
 const userName = computed(() => authStore.user?.username || 'Alex Turner');
-const userRole = computed(() => authStore.user?.role || 'Administrator');
-const userAvatar = ref(
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuCZ9-hq_kXULs2c942Dn9iHS5_oWynWuHdvtd4R6gPBfYkUzu09wktgtHKm07wMD7-N_L1DUT7eksMPHggoBHdzi2dxdC0iJtXjypvOctS1Tayqj98e6ErZmJO7wmPinsQfAWzugEOs0qJMSe1Oz7ulGy4eZmmxPqayfwYemRys97jxPP1-P0QwWi3CkSuzm1KnxdAmebdOwuijEwSU-rvUu8wZmAZmW5QVRcShhIpqmmRN5sc1Wde_7U2lw3pkkciXqOebHed__Kk'
-);
 
 const stats = ref([
   {

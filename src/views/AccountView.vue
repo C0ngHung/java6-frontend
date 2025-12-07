@@ -8,7 +8,7 @@
         <span class="text-text-light dark:text-text-dark">My Account</span>
       </div>
       <div class="text-sm">
-        Welcome! <span class="text-primary">{{ authStore.user?.fullName || 'User' }}</span>
+        Welcome! <span class="text-primary">{{ authStore.user?.fullName || DEFAULT_USER_NAME }}</span>
       </div>
     </div>
 
@@ -71,11 +71,11 @@
                   v-model="form.fullName"
                   type="text"
                   required
-                  maxlength="100"
+                  :maxlength="MAX_FULL_NAME_LENGTH"
                   :class="errors.fullName ? 'border-red-500' : ''"
                   placeholder="Enter your full name"
                 />
-                <p v-if="errors.fullName" class="text-red-500 text-xs mt-1">{{ errors.fullName }}</p>
+                <p v-if="errors.fullName" class="text-red-500 text-xs mt-1" role="alert">{{ errors.fullName }}</p>
               </div>
               <div>
                 <label class="block text-sm font-medium mb-2" for="email">
@@ -86,11 +86,11 @@
                   v-model="form.email"
                   type="email"
                   required
-                  maxlength="255"
+                  :maxlength="MAX_EMAIL_LENGTH"
                   :class="errors.email ? 'border-red-500' : ''"
                   placeholder="Enter your email"
                 />
-                <p v-if="errors.email" class="text-red-500 text-xs mt-1">{{ errors.email }}</p>
+                <p v-if="errors.email" class="text-red-500 text-xs mt-1" role="alert">{{ errors.email }}</p>
               </div>
               <div>
                 <label class="block text-sm font-medium mb-2" for="phone">
@@ -100,7 +100,7 @@
                   id="phone"
                   v-model="form.phone"
                   type="tel"
-                  maxlength="15"
+                  :maxlength="MAX_PHONE_LENGTH"
                   :class="errors.phone ? 'border-red-500' : ''"
                   placeholder="Enter your phone number"
                 />
@@ -123,18 +123,18 @@
                 v-model="form.newPassword"
                 type="password"
                 placeholder="New Password (minimum 6 characters)"
-                maxlength="255"
+                :maxlength="MAX_PASSWORD_LENGTH"
                 :class="errors.newPassword ? 'border-red-500' : ''"
               />
-              <p v-if="errors.newPassword" class="text-red-500 text-xs mt-1">{{ errors.newPassword }}</p>
+              <p v-if="errors.newPassword" class="text-red-500 text-xs mt-1" role="alert">{{ errors.newPassword }}</p>
               <Input
                 v-model="form.confirmPassword"
                 type="password"
                 placeholder="Confirm New Password"
-                maxlength="255"
+                :maxlength="MAX_PASSWORD_LENGTH"
                 :class="errors.confirmPassword ? 'border-red-500' : ''"
               />
-              <p v-if="errors.confirmPassword" class="text-red-500 text-xs mt-1">{{ errors.confirmPassword }}</p>
+              <p v-if="errors.confirmPassword" class="text-red-500 text-xs mt-1" role="alert">{{ errors.confirmPassword }}</p>
             </div>
             <div class="flex justify-end items-center gap-6 pt-4">
               <Button type="button" variant="outline" @click="handleCancel">Cancel</Button>
@@ -142,8 +142,9 @@
                 type="submit" 
                 :disabled="isSubmitting"
                 @click.prevent="handleSubmit"
+                aria-label="Save profile changes"
               >
-                {{ isSubmitting ? 'Saving...' : 'Save Changes' }}
+                {{ isSubmitting ? SAVING_TEXT : SAVE_CHANGES_TEXT }}
               </Button>
             </div>
           </form>
@@ -163,13 +164,24 @@ import type { UserUpdateRequest } from '@/types/user';
 import { getErrorMessage, DEFAULT_ERROR_MESSAGES } from '@/utils/getErrorMessage';
 import Button from '@/components/ui/button/Button.vue';
 import Input from '@/components/ui/input/Input.vue';
+import { ROUTES } from '@/constants';
+
+const MAX_FULL_NAME_LENGTH = 100;
+const MAX_EMAIL_LENGTH = 255;
+const MAX_PHONE_LENGTH = 15;
+const MAX_PASSWORD_LENGTH = 255;
+const MIN_PASSWORD_LENGTH = 6;
+const SAVING_TEXT = 'Saving...';
+const SAVE_CHANGES_TEXT = 'Save Changes';
+const DEFAULT_USER_NAME = 'User';
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const router = useRouter();
 const authStore = useAuthStore();
 const toast = useToast();
 
-const activeSection = ref('profile');
-const isSubmitting = ref(false);
+const activeSection = ref<string>('profile');
+const isSubmitting = ref<boolean>(false);
 
 const form = ref({
   username: '',
@@ -186,38 +198,34 @@ const errors = ref<Record<string, string>>({});
 const validateForm = (): boolean => {
   errors.value = {};
 
-  // Full Name validation
   if (!form.value.fullName.trim()) {
     errors.value.fullName = 'Full name is required';
-  } else if (form.value.fullName.length > 100) {
-    errors.value.fullName = 'Full name must not exceed 100 characters';
+  } else if (form.value.fullName.length > MAX_FULL_NAME_LENGTH) {
+    errors.value.fullName = `Full name must not exceed ${MAX_FULL_NAME_LENGTH} characters`;
   }
 
-  // Email validation
   if (!form.value.email.trim()) {
     errors.value.email = 'Email is required';
   } else if (!validateEmail(form.value.email)) {
     errors.value.email = 'Please enter a valid email address';
-  } else if (form.value.email.length > 255) {
-    errors.value.email = 'Email must not exceed 255 characters';
+  } else if (form.value.email.length > MAX_EMAIL_LENGTH) {
+    errors.value.email = `Email must not exceed ${MAX_EMAIL_LENGTH} characters`;
   }
 
-  // Phone validation (optional)
-  if (form.value.phone && form.value.phone.length > 15) {
-    errors.value.phone = 'Phone number must not exceed 15 characters';
+  if (form.value.phone && form.value.phone.length > MAX_PHONE_LENGTH) {
+    errors.value.phone = `Phone number must not exceed ${MAX_PHONE_LENGTH} characters`;
   }
 
-  // Password validation only if any password field is filled
   if (form.value.currentPassword || form.value.newPassword || form.value.confirmPassword) {
     if (!form.value.currentPassword) {
       errors.value.currentPassword = 'Current password is required to change password';
     }
     if (!form.value.newPassword) {
       errors.value.newPassword = 'New password is required';
-    } else if (form.value.newPassword.length < 6) {
-      errors.value.newPassword = 'New password must be at least 6 characters';
-    } else if (form.value.newPassword.length > 255) {
-      errors.value.newPassword = 'New password must not exceed 255 characters';
+    } else if (form.value.newPassword.length < MIN_PASSWORD_LENGTH) {
+      errors.value.newPassword = `New password must be at least ${MIN_PASSWORD_LENGTH} characters`;
+    } else if (form.value.newPassword.length > MAX_PASSWORD_LENGTH) {
+      errors.value.newPassword = `New password must not exceed ${MAX_PASSWORD_LENGTH} characters`;
     }
     if (form.value.newPassword && form.value.newPassword !== form.value.confirmPassword) {
       errors.value.confirmPassword = 'Passwords do not match';
@@ -228,8 +236,7 @@ const validateForm = (): boolean => {
 };
 
 const validateEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  return EMAIL_PATTERN.test(email);
 };
 
 const handleSubmit = async () => {
@@ -246,14 +253,12 @@ const handleSubmit = async () => {
   isSubmitting.value = true;
 
   try {
-    // Prepare update data according to UserUpdateDto
     const updateData: UserUpdateRequest = {
       fullName: form.value.fullName,
       email: form.value.email,
       phone: form.value.phone || undefined,
     };
 
-    // Only include password if user wants to change it
     if (form.value.newPassword) {
       updateData.password = form.value.newPassword;
     }
@@ -263,24 +268,21 @@ const handleSubmit = async () => {
     if (response.success && response.data) {
       toast.success('Profile updated successfully!');
       
-      // Update user in store
       const updatedUser = {
         ...authStore.user,
         fullName: response.data.fullName,
         email: response.data.email,
-        phone: response.data.phone || authStore.user.phone,
+        phone: response.data.phone || authStore.user?.phone,
       };
       authStore.setUser(updatedUser);
 
-      // Clear password fields after successful update
       form.value.currentPassword = '';
       form.value.newPassword = '';
       form.value.confirmPassword = '';
     } else {
       toast.error(getErrorMessage(null, DEFAULT_ERROR_MESSAGES.PROFILE_UPDATE));
     }
-  } catch (error: any) {
-    console.error('Profile update error:', error);
+  } catch (error: unknown) {
     const errorMessage = getErrorMessage(error, DEFAULT_ERROR_MESSAGES.PROFILE_UPDATE);
     toast.error(errorMessage);
   } finally {
@@ -288,13 +290,12 @@ const handleSubmit = async () => {
   }
 };
 
-const handleCancel = () => {
-  // Reset form to original values
+const handleCancel = (): void => {
   loadUserData();
   errors.value = {};
 };
 
-const loadUserData = () => {
+const loadUserData = (): void => {
   if (authStore.user) {
     form.value.username = authStore.user.username || '';
     form.value.fullName = authStore.user.fullName || '';
@@ -304,9 +305,8 @@ const loadUserData = () => {
 };
 
 onMounted(() => {
-  // Redirect to login if not authenticated
   if (!authStore.isAuthenticated) {
-    router.push({ name: 'Login', query: { redirect: '/account' } });
+    router.push({ name: 'Login', query: { redirect: ROUTES.ACCOUNT } });
     return;
   }
 

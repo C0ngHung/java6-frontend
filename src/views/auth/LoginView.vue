@@ -74,10 +74,10 @@
                   :disabled="loading"
                   class="w-full sm:w-1/2 bg-primary text-white font-medium py-3 sm:py-4 px-6 rounded-DEFAULT hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                 >
-                  <span v-if="loading">Đang đăng nhập...</span>
-                  <span v-else>Đăng nhập</span>
+                  <span v-if="loading">{{ LOADING_TEXT }}</span>
+                  <span v-else>{{ LOGIN_TEXT }}</span>
                 </button>
-                <RouterLink to="/forgot-password" class="text-primary hover:underline text-sm sm:text-base w-full sm:w-auto text-center sm:text-left">
+                <RouterLink :to="FORGOT_PASSWORD_PATH" class="text-primary hover:underline text-sm sm:text-base w-full sm:w-auto text-center sm:text-left">
                   Quên mật khẩu?
                 </RouterLink>
               </div>
@@ -87,7 +87,7 @@
             <div class="mt-6 sm:mt-8 text-center">
               <p class="text-sm sm:text-base text-gray-600 dark:text-gray-300">
                 Chưa có tài khoản?
-                <RouterLink to="/register" class="font-medium text-primary hover:text-red-600 underline">
+                <RouterLink :to="REGISTER_PATH" class="font-medium text-primary hover:text-red-600 underline">
                   Đăng ký ngay
                 </RouterLink>
               </p>
@@ -103,6 +103,22 @@ import { useRouter, useRoute, RouterLink } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { getErrorMessage, DEFAULT_ERROR_MESSAGES } from '@/utils/getErrorMessage';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ROUTES } from '@/constants';
+
+const FORGOT_PASSWORD_PATH = '/forgot-password';
+const REGISTER_PATH = '/register';
+const HOME_PATH = '/';
+const ERROR_CODE_BAD_CREDENTIALS = 1002;
+const ERROR_CODE_ACCOUNT_NOT_ACTIVATED = 1007;
+const HTTP_STATUS_UNAUTHORIZED = 401;
+const QUERY_PARAM_REGISTERED = 'true';
+const QUERY_PARAM_ACTIVATED = 'true';
+const LOADING_TEXT = 'Đang đăng nhập...';
+const LOGIN_TEXT = 'Đăng nhập';
+const SUCCESS_REGISTERED = 'Đăng ký thành công! Vui lòng đăng nhập.';
+const SUCCESS_ACTIVATED = 'Tài khoản đã được kích hoạt thành công! Vui lòng đăng nhập.';
+const ERROR_BAD_CREDENTIALS = 'Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng thử lại.';
+const ERROR_ACCOUNT_NOT_ACTIVATED = 'Tài khoản chưa được kích hoạt. Vui lòng kiểm tra email để kích hoạt tài khoản.';
 
 const router = useRouter();
 const route = useRoute();
@@ -113,20 +129,20 @@ const form = ref({
   password: '',
 });
 
-const loading = ref(false);
-const error = ref('');
-const success = ref('');
+const loading = ref<boolean>(false);
+const error = ref<string>('');
+const success = ref<string>('');
 
 onMounted(() => {
-  if (route.query.registered === 'true') {
-    success.value = 'Đăng ký thành công! Vui lòng đăng nhập.';
+  if (route.query.registered === QUERY_PARAM_REGISTERED) {
+    success.value = SUCCESS_REGISTERED;
   }
-  if (route.query.activated === 'true') {
-    success.value = 'Tài khoản đã được kích hoạt thành công! Vui lòng đăng nhập.';
+  if (route.query.activated === QUERY_PARAM_ACTIVATED) {
+    success.value = SUCCESS_ACTIVATED;
   }
 });
 
-const handleLogin = async () => {
+const handleLogin = async (): Promise<void> => {
   loading.value = true;
   error.value = '';
   success.value = '';
@@ -134,22 +150,19 @@ const handleLogin = async () => {
   try {
     await authStore.login(form.value.username, form.value.password);
     const redirect = route.query.redirect as string;
-    router.push(redirect || '/');
-  } catch (err: any) {
-    // Use custom error messages
-    const errorCode = err.response?.data?.code;
-    const statusCode = err.response?.status;
+    router.push(redirect || HOME_PATH);
+  } catch (err: unknown) {
+    const axiosError = err as { response?: { data?: { code?: number }; status?: number } };
+    const errorCode = axiosError.response?.data?.code;
+    const statusCode = axiosError.response?.status;
     
-    // Handle specific error codes with custom messages
-    if (errorCode === 1002) { // BAD_CREDENTIALS
-      error.value = 'Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng thử lại.';
-    } else if (errorCode === 1007) { // ACCOUNT_NOT_ACTIVATED
-      error.value = 'Tài khoản chưa được kích hoạt. Vui lòng kiểm tra email để kích hoạt tài khoản.';
-    } else if (statusCode === 401 && !errorCode) {
-      // HTTP 401 without error code usually means bad credentials
-      error.value = 'Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng thử lại.';
+    if (errorCode === ERROR_CODE_BAD_CREDENTIALS) {
+      error.value = ERROR_BAD_CREDENTIALS;
+    } else if (errorCode === ERROR_CODE_ACCOUNT_NOT_ACTIVATED) {
+      error.value = ERROR_ACCOUNT_NOT_ACTIVATED;
+    } else if (statusCode === HTTP_STATUS_UNAUTHORIZED && !errorCode) {
+      error.value = ERROR_BAD_CREDENTIALS;
     } else {
-      // For other errors, use custom error messages
       error.value = getErrorMessage(err, DEFAULT_ERROR_MESSAGES.LOGIN);
     }
   } finally {

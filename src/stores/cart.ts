@@ -1,78 +1,84 @@
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
+import { ref, computed, type Ref, type ComputedRef } from 'vue';
 import { cartApi } from '@/services/cart';
 import { useAuthStore } from './auth';
 import type { CartResponseDto, CartItemRequestDto } from '@/types/cart';
 import { useToast } from '@/composables/useToast';
 import { getErrorMessage, DEFAULT_ERROR_MESSAGES } from '@/utils/getErrorMessage';
 
+const STORAGE_ANONYMOUS_ID_KEY = 'anonymousId';
+const ANONYMOUS_ID_PREFIX = 'anon_';
+const ANONYMOUS_ID_RANDOM_LENGTH = 9;
+const HTTP_STATUS_NOT_FOUND = 404;
+const HTTP_STATUS_CONFLICT = 409;
+const ERROR_CODE_DUPLICATE_ITEM = 4003;
+const DEFAULT_QUANTITY = 1;
+const UNUSED_PRODUCT_ID = 0;
+
 export const useCartStore = defineStore('cart', () => {
   const authStore = useAuthStore();
   const toast = useToast();
 
-  const cart = ref<CartResponseDto | null>(null);
-  const loading = ref(false);
-  const anonymousId = ref<string | null>(localStorage.getItem('anonymousId'));
+  const cart: Ref<CartResponseDto | null> = ref(null);
+  const loading: Ref<boolean> = ref(false);
+  const anonymousId: Ref<string | null> = ref(localStorage.getItem(STORAGE_ANONYMOUS_ID_KEY));
 
-  // Generate or get anonymous ID for guest users
   const getAnonymousId = (): string => {
-    if (!anonymousId.value) {
-      const newId = `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      anonymousId.value = newId;
-      localStorage.setItem('anonymousId', newId);
+    if (anonymousId.value) {
+      return anonymousId.value;
     }
-    return anonymousId.value;
+
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 2 + ANONYMOUS_ID_RANDOM_LENGTH);
+    const newId = `${ANONYMOUS_ID_PREFIX}${timestamp}_${random}`;
+    anonymousId.value = newId;
+    localStorage.setItem(STORAGE_ANONYMOUS_ID_KEY, newId);
+    return newId;
   };
 
-  // Computed properties
-  const cartCount = computed(() => {
+  const getCartIdentifiers = (): { userId?: number; anonId?: string } => {
+    const userId = authStore.isAuthenticated && authStore.user?.id ? authStore.user.id : undefined;
+    const anonId = !authStore.isAuthenticated ? getAnonymousId() : undefined;
+    return { userId, anonId };
+  };
+
+  const cartCount: ComputedRef<number> = computed(() => {
     return cart.value?.totalItems || 0;
   });
 
-  const totalPrice = computed(() => {
+  const totalPrice: ComputedRef<number> = computed(() => {
     return cart.value?.totalPriceCents || 0;
   });
 
-  // Fetch cart from API
-  const fetchCart = async () => {
+  const fetchCart = async (): Promise<void> => {
     loading.value = true;
     try {
-      // If user is authenticated, use userId (never use anonymousId)
-      // If user is not authenticated, use anonymousId (never use userId)
-      const userId = authStore.isAuthenticated && authStore.user?.id ? authStore.user.id : undefined;
-      const anonId = !authStore.isAuthenticated ? getAnonymousId() : undefined;
-
+      const { userId, anonId } = getCartIdentifiers();
       const response = await cartApi.getCart(userId, anonId);
       if (response.success) {
         cart.value = response.data;
       }
-    } catch (error: any) {
-      // 404 is normal when cart doesn't exist yet - don't log it
-      // Only log other errors (network errors, 500, etc.)
-      if (error.response?.status !== 404) {
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { status?: number } };
+      if (axiosError.response?.status !== HTTP_STATUS_NOT_FOUND) {
         // Other errors are logged by axios interceptor if needed
       }
-      // Silently fail - cart will remain null
     } finally {
       loading.value = false;
     }
   };
 
-  // Get or create cart
-  const getOrCreateCart = async () => {
+  const getOrCreateCart = async (): Promise<CartResponseDto> => {
     loading.value = true;
     try {
-      // If user is authenticated, use userId (never use anonymousId)
-      // If user is not authenticated, use anonymousId (never use userId)
-      const userId = authStore.isAuthenticated && authStore.user?.id ? authStore.user.id : undefined;
-      const anonId = !authStore.isAuthenticated ? getAnonymousId() : undefined;
-
+      const { userId, anonId } = getCartIdentifiers();
       const response = await cartApi.getOrCreate(userId, anonId);
-      if (response.success) {
+      if (response.success && response.data) {
         cart.value = response.data;
         return response.data;
       }
-    } catch (error: any) {
+      throw new Error('Failed to get or create cart');
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error, DEFAULT_ERROR_MESSAGES.CART_GET));
       throw error;
     } finally {
@@ -80,34 +86,26 @@ export const useCartStore = defineStore('cart', () => {
     }
   };
 
-  // Add item to cart
-  const addItem = async (productId: number, quantity: number = 1) => {
+  const addItem = async (productId: number, quantity: number = DEFAULT_QUANTITY): Promise<CartResponseDto> => {
     loading.value = true;
     try {
-      // Backend handles cart creation automatically - no need to call getOrCreateCart() first
-      // This prevents race conditions and duplicate entries
-
-      // If user is authenticated, use userId (never use anonymousId)
-      // If user is not authenticated, use anonymousId (never use userId)
-      const userId = authStore.isAuthenticated && authStore.user?.id ? authStore.user.id : undefined;
-      const anonId = !authStore.isAuthenticated ? getAnonymousId() : undefined;
+      const { userId, anonId } = getCartIdentifiers();
 
       const itemData: CartItemRequestDto = {
         productId,
         quantity,
       };
 
-      // Backend will automatically getOrCreateCart if needed
       const response = await cartApi.addItem(itemData, userId, anonId);
-      if (response.success) {
+      if (response.success && response.data) {
         cart.value = response.data;
         toast.success('Product added to cart!');
         return response.data;
       }
-    } catch (error: any) {
-      // Handle duplicate entry error gracefully
-      if (error.response?.status === 409 || error.response?.data?.code === 4003) {
-        // Cart item already exists - refresh cart to get updated state
+      throw new Error('Failed to add item to cart');
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { status?: number; data?: { code?: number } } };
+      if (axiosError.response?.status === HTTP_STATUS_CONFLICT || axiosError.response?.data?.code === ERROR_CODE_DUPLICATE_ITEM) {
         await fetchCart();
         toast.error('Sản phẩm đã có trong giỏ hàng');
       } else {
@@ -119,26 +117,23 @@ export const useCartStore = defineStore('cart', () => {
     }
   };
 
-  // Update item quantity
-  const updateItem = async (itemId: number, quantity: number) => {
+  const updateItem = async (itemId: number, quantity: number): Promise<CartResponseDto> => {
     loading.value = true;
     try {
-      // If user is authenticated, use userId (never use anonymousId)
-      // If user is not authenticated, use anonymousId (never use userId)
-      const userId = authStore.isAuthenticated && authStore.user?.id ? authStore.user.id : undefined;
-      const anonId = !authStore.isAuthenticated ? getAnonymousId() : undefined;
+      const { userId, anonId } = getCartIdentifiers();
 
       const itemData: CartItemRequestDto = {
-        productId: 0, // Not used in update
+        productId: UNUSED_PRODUCT_ID,
         quantity,
       };
 
       const response = await cartApi.updateItem(itemId, itemData, userId, anonId);
-      if (response.success) {
+      if (response.success && response.data) {
         cart.value = response.data;
         return response.data;
       }
-    } catch (error: any) {
+      throw new Error('Failed to update cart item');
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error, DEFAULT_ERROR_MESSAGES.CART_UPDATE));
       throw error;
     } finally {
@@ -146,22 +141,19 @@ export const useCartStore = defineStore('cart', () => {
     }
   };
 
-  // Remove item from cart
-  const removeItem = async (itemId: number) => {
+  const removeItem = async (itemId: number): Promise<CartResponseDto> => {
     loading.value = true;
     try {
-      // If user is authenticated, use userId (never use anonymousId)
-      // If user is not authenticated, use anonymousId (never use userId)
-      const userId = authStore.isAuthenticated && authStore.user?.id ? authStore.user.id : undefined;
-      const anonId = !authStore.isAuthenticated ? getAnonymousId() : undefined;
+      const { userId, anonId } = getCartIdentifiers();
 
       const response = await cartApi.removeItem(itemId, userId, anonId);
-      if (response.success) {
+      if (response.success && response.data) {
         cart.value = response.data;
         toast.success('Product removed from cart');
         return response.data;
       }
-    } catch (error: any) {
+      throw new Error('Failed to remove cart item');
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error, DEFAULT_ERROR_MESSAGES.CART_REMOVE));
       throw error;
     } finally {
@@ -169,21 +161,17 @@ export const useCartStore = defineStore('cart', () => {
     }
   };
 
-  // Clear cart
-  const clearCart = async () => {
+  const clearCart = async (): Promise<void> => {
     loading.value = true;
     try {
-      // If user is authenticated, use userId (never use anonymousId)
-      // If user is not authenticated, use anonymousId (never use userId)
-      const userId = authStore.isAuthenticated && authStore.user?.id ? authStore.user.id : undefined;
-      const anonId = !authStore.isAuthenticated ? getAnonymousId() : undefined;
+      const { userId, anonId } = getCartIdentifiers();
 
       const response = await cartApi.clear(userId, anonId);
       if (response.success) {
         cart.value = null;
         toast.success('Cart cleared');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(getErrorMessage(error, DEFAULT_ERROR_MESSAGES.CART_CLEAR));
       throw error;
     } finally {
@@ -191,41 +179,30 @@ export const useCartStore = defineStore('cart', () => {
     }
   };
 
-  // Merge guest cart into user cart when user logs in
-  const mergeCartOnLogin = async (userId: number) => {
+  const mergeCartOnLogin = async (userId: number): Promise<void> => {
+    const anonId = anonymousId.value;
+    if (!anonId) {
+      await fetchCart();
+      return;
+    }
+
     try {
-      const anonId = anonymousId.value;
-
-      // If there's no anonymous cart, just fetch user cart
-      if (!anonId) {
-        await fetchCart();
-        return;
-      }
-
-      // Use backend merge endpoint for better performance
       const response = await cartApi.merge(userId, anonId);
-      if (response.success) {
+      if (response.success && response.data) {
         cart.value = response.data;
       }
 
-      // Clear anonymous ID
       anonymousId.value = null;
-      localStorage.removeItem('anonymousId');
-    } catch (error: any) {
-      // Silently fail - just fetch user cart
-      // Error is logged by axios interceptor if needed
+      localStorage.removeItem(STORAGE_ANONYMOUS_ID_KEY);
+    } catch {
       await fetchCart();
     }
   };
 
-  // Initialize cart on store creation
-  const initCart = async () => {
-    // Only fetch cart if user is authenticated (they might have an existing cart)
-    // For anonymous users, don't fetch on init - cart will be created automatically when they add first item
+  const initCart = async (): Promise<void> => {
     if (authStore.isAuthenticated && authStore.user?.id) {
       await fetchCart();
     }
-    // Anonymous users: cart will be created via getOrCreateCart() when they add first item
   };
 
   return {
